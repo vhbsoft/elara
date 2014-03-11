@@ -1,0 +1,47 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def configure(conf):
+     conf.env['lz'] = conf.check(mandatory=True, lib='z', uselib_store='LZ')
+
+def build(bld):
+    module = bld.create_ns3_module('compression', ['core','point-to-point', 'network', 'applications'])
+    module.source = [
+        'model/compression-header.cc',
+        'model/compression-app-layer.cc',
+        'model/compression-packet-gen.cc',
+        'model/compression-model.cc',
+        'model/compression-sender.cc',
+        'model/compression-receiver.cc',
+        'helper/compression-sender-receiver-helper.cc',
+        ]
+
+    module_test = bld.create_ns3_module_test_library('compression')
+    module_test.source = [
+        'test/compression-test-suite.cc',
+        ]
+
+    headers = bld.new_task_gen(features=['ns3header'])
+    headers.module = 'compression'
+    headers.source = [
+        'model/compression-header.h',
+        'model/compression-app-layer.h',
+        'model/compression-packet-gen.h',
+        'model/compression-model.h',
+        'model/compression-sender.h',
+        'model/compression-receiver.h',
+        'helper/compression-sender-receiver-helper.h',
+       ]
+    # links zlib library
+    module.use.append("LZ")
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.add_subdirs('examples')
+
+    # bld.ns3_python_bindings()
+
