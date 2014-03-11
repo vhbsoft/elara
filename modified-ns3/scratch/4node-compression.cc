@@ -119,11 +119,11 @@ main (int argc, char *argv[])
   p2p.SetDeviceAttribute ("DataRate", (StringValue) s0p0DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (s0p0Mtu));
   if (queueMode == 'b') {
-    p2p.SetQueue("ns3::Queue", "Mode", EnumValue(QUEUE_MODE_BYTES));
+    p2p.SetQueue("ns3::Queue", "Mode", Queue::EnumValue(QUEUE_MODE_BYTES));
     p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (s0QueueSize));
   }
   else if (queueMode == 'p') {
-    p2p.SetQueue("ns3::Queue", "Mode", EnumValue(QUEUE_MODE_PACKETS));
+    p2p.SetQueue("ns3::Queue", "Mode", Queue::EnumValue(QUEUE_MODE_PACKETS));
     p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (s0QueueSize));
   }
   NetDeviceContainer s0p0_d = p2p.Install (s0p0);
@@ -132,11 +132,11 @@ main (int argc, char *argv[])
   p2p.SetDeviceAttribute ("DataRate", (StringValue) p1r0DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (p1r0Mtu));
   if (queueMode == 'b') {
-    p2p.SetQueue("ns3::Queue", "Mode", EnumValue(QUEUE_MODE_BYTES));
+    p2p.SetQueue("ns3::Queue", "Mode", Queue::EnumValue(QUEUE_MODE_BYTES));
     p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (p1QueueSize));
   }
   else if (queueMode == 'p') {
-    p2p.SetQueue("ns3::Queue", "Mode", EnumValue(QUEUE_MODE_PACKETS));
+    p2p.SetQueue("ns3::Queue", "Mode", Queue::EnumValue(QUEUE_MODE_PACKETS));
     p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (p1QueueSize));
   }
   NetDeviceContainer p1r0_d = p2p.Install (p1r0);  
@@ -145,11 +145,11 @@ main (int argc, char *argv[])
   p2p.SetDeviceAttribute ("DataRate", (StringValue) p0p1DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (p0p1Mtu));
   if (queueMode == 'b') {
-    p2p.SetQueue("ns3::Queue", "Mode", EnumValue(QUEUE_MODE_BYTES));
+    p2p.SetQueue("ns3::Queue", "Mode", Queue::EnumValue(QUEUE_MODE_BYTES));
     p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (p0QueueSize));
   }
   else if (queueMode == 'p') {
-    p2p.SetQueue("ns3::Queue", "Mode", EnumValue(QUEUE_MODE_PACKETS));
+    p2p.SetQueue("ns3::Queue", "Mode", Queue::EnumValue(QUEUE_MODE_PACKETS));
     p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (p0QueueSize));
   }
   // Set up compression model
