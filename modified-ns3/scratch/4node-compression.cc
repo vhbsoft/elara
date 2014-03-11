@@ -2,7 +2,9 @@
 /*
  * Robert Chang 2012
  * Usage:
-> ./waf --run "4node-compression --outputFile=./test.dat --entropy=h --numPackets=1000  --packetSize=1024 --interPacketTime=.0000001 --s0p0Delay=30ms --p0p1Delay=30ms --p1r0Delay=30ms --s0p0DataRate=5Mbps --p0p1DataRate=4Mbps --p1r0DataRate=5Mbps --s0QueueSize=655350000 --p0QueueSize=655350000 --p1QueueSize=655350000  --compression=1"
+> ./waf --run "4node-compression --outputFile=./test.dat --entropy=h --numPackets=1000  --packetSize=1024 --interPacketTime=.0000001 --s0p0Delay=30ms --p0p1Delay=30ms --p1r0Delay=30ms --s0p0DataRate=5Mbps --p0p1DataRate=4Mbps --p1r0DataRate=5Mbps --queueMode=b --s0QueueSize=655350000 --p0QueueSize=655350000 --p1QueueSize=655350000  --compression=1"
+
+> ./waf --run "4node-compression --outputFile=./test.dat --entropy=h --numPackets=1000  --packetSize=1024 --interPacketTime=.0000001 --s0p0Delay=30ms --p0p1Delay=30ms --p1r0Delay=30ms --s0p0DataRate=5Mbps --p0p1DataRate=4Mbps --p1r0DataRate=5Mbps --queueMode=p --s0QueueSize=1000 --p0QueueSize=1000 --p1QueueSize=1000  --compression=1"
 
  */
 
@@ -51,7 +53,7 @@ main (int argc, char *argv[])
   uint32_t p0p1Mtu = 2 * packetSize;
   uint32_t p1r0Mtu = 2 * packetSize;
   
-
+  char queueMode = 'p';
   uint32_t s0QueueSize = 655350000;
   uint32_t p0QueueSize = 655350000;
   uint32_t p1QueueSize = 655350000;
@@ -81,6 +83,8 @@ main (int argc, char *argv[])
   cmd.AddValue ("s0p0Mtu", "The max transmission size between net devices on channel ", s0p0Mtu);
   cmd.AddValue ("p0p1Mtu", "The max transmission size between net devices on channel ", p0p1Mtu);
   cmd.AddValue ("p1r0Mtu", "The max transmission size between net devices on channel ", p1r0Mtu);
+
+  cmd.AddValue ("queueMode", "Whether queues are based on bytes or packets. b for bytes, p for packets", queueMode);
 
   cmd.AddValue ("s0QueueSize", "The size of the queue at s0", s0QueueSize);
   cmd.AddValue ("p0QueueSize", "The size of the queue at p0", p0QueueSize);
@@ -114,20 +118,29 @@ main (int argc, char *argv[])
   p2p.SetChannelAttribute ("Delay", (StringValue) s0p0Delay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) s0p0DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (s0p0Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (s0QueueSize));
+  if (queueMode == 'b')
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (s0QueueSize));
+  else if (queueMode == 'p')
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (s0QueueSize));
   NetDeviceContainer s0p0_d = p2p.Install (s0p0);
 
   p2p.SetChannelAttribute ("Delay", (StringValue) p1r0Delay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) p1r0DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (p1r0Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (p1QueueSize));
+  if (queueMode == 'b')
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (p1QueueSize));
+  else if (queueMode == 'p')
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (p1QueueSize));    
   NetDeviceContainer p1r0_d = p2p.Install (p1r0);  
 
   p2p.SetChannelAttribute ("Delay", (StringValue) p0p1Delay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) p0p1DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (p0p1Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (p0QueueSize));
-
+  if (queueMode == 'b')
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (p0QueueSize));
+  else if (queueMode == 'p')
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (p0QueueSize));    
+ 
   // Set up compression model
   Ptr<CompressionModel> comp = CreateObject<CompressionModel> ();
   if (compression == 1) comp->Enable();
