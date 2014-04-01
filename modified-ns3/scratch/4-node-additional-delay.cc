@@ -1,6 +1,9 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Robert Chang 2012
+ * Usage:
+> ./waf --run "4-node-additional-delay --procDelay=0.000001 --numPackets=10000  --packetSize=10 --interPacketTime=.00000001 --ReceiveQueueSizeR2=10000 --TXQueueSizeS=400000000 --TXQueueSizeR1=6000000 --TXQueueSizeR2=15000000 --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=10Mbps --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms"
+
  */
 
 #include <string>
