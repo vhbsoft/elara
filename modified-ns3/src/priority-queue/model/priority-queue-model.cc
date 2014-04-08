@@ -51,7 +51,9 @@ PriorityQueueModel::PriorityQueueModel ()
      m_processNext (true),
      m_nodalProcessingDelay (Seconds (0)),
      m_enableThreshold (false),
+     m_queueMode ('p'),
      m_thresholdBytes (0),
+     m_thresholdPackets (0),
      m_txQueue (0)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -293,6 +295,12 @@ PriorityQueueModel::SetTxQueue (Ptr<Queue> queue)
   m_txQueue = queue;
 }
 
+void
+PriorityQueueModel::SetQueueMode (uint8_t mode)
+{
+  m_queueMode = mode;
+}
+
 void 
 PriorityQueueModel::SetThresholdBytes (uint32_t threshold)
 {
@@ -305,22 +313,48 @@ PriorityQueueModel::GetThresholdBytes (void)
   return m_thresholdBytes;
 }
 
+void 
+PriorityQueueModel::SetThresholdPackets (uint32_t threshold)
+{
+  m_thresholdPackets = threshold;
+}
+
+uint32_t 
+PriorityQueueModel::GetThresholdPackets (void)
+{
+  return m_thresholdPackets;
+}
+
 bool 
 PriorityQueueModel::CheckThreshold (uint32_t size)
 {
-  //NS_LOG_UNCOND("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
-  NS_LOG_INFO("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
-  if (m_enableThreshold && m_txQueue && m_txQueue->GetNBytes() + size >= m_thresholdBytes)
+  if (m_enableThreshold && m_txQueue)
     {
-      //NS_LOG_UNCOND ("\tTxQueue is filled past threshold! waiting 1 processing cycle");      
-      NS_LOG_INFO ("\tTxQueue is filled past threshold! Waiting...");
-      //NS_LOG_UNCOND ("\tTxQueue is filled past threshold! Waiting...");
-      return false;
+      if (m_queueMode == 'p')
+        {
+          NS_LOG_UNCOND("TxQueue: " << m_txQueue->GetNPackets() << " / " << m_thresholdPackets << " packets");
+          NS_LOG_INFO("TxQueue: " << m_txQueue->GetNPackets() << " / " << m_thresholdPackets << " packets");
+          //NS_LOG_UNCOND("total packets: " << m_txQueue->GetTotalReceivedPackets());
+          if (m_txQueue->GetNPackets() + 1 >= m_thresholdPackets)
+            {
+              NS_LOG_INFO ("\tTxQueue is filled past threshold! Waiting...");
+              NS_LOG_UNCOND ("\tTxQueue is filled past threshold! Waiting...");
+              return false;
+            }
+        }
+      else if (m_queueMode == 'b')
+        {
+          NS_LOG_UNCOND("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
+          NS_LOG_INFO("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
+          if (m_txQueue->GetNBytes() + size >= m_thresholdBytes) 
+            {
+              NS_LOG_INFO ("\tTxQueue is filled past threshold! Waiting...");
+              //NS_LOG_UNCOND ("\tTxQueue is filled past threshold! Waiting...");
+              return false;
+            }
+        }
     }
-  else
-    {
-      return true;
-    }
+  return true;
 }
 /* Coordinated */
 

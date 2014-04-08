@@ -4,9 +4,11 @@
  *
  * Usage:
 
-./waf --run "4-node-priority-queue-coordinated --ReceiveQueueSizeR2=10000 --TXQueueSizeR2=4000 --TXThresholdR2=3996 --procDelay=0.000001 --TXQueueSizeS=4000 --TXQueueSizeR1=4000 --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=5Mbps --outputFile=./output_files/temp.dat --packetSize=4 --interPacketTime=0.00000001 --initialPacketTrainLength=100 --separationPacketTrainLength=10000 --numAptPriorityProbes=100 --aptPriority='H' --backToBackPackets=1"
+./waf --run "4-node-priority-queue-coordinated --ReceiveQueueSizeR2=10000 --TXQueueSizeR2=4000 --TXThresholdR2Packets=3996 --procDelay=0.000001 --TXQueueSizeS=4000 --TXQueueSizeR1=4000 --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=5Mbps --outputFile=./output_files/temp.dat --packetSize=4 --interPacketTime=0.00000001 --initialPacketTrainLength=100 --separationPacketTrainLength=10000 --numAptPriorityProbes=100 --aptPriority='H' --queueMode='p'"
 
-./waf --run "4-node-priority-queue-coordinated --ReceiveQueueSizeR2=10000 --TXQueueSizeR2=4000 --TXThresholdR2=3996 --procDelay=0.000001 --TXQueueSizeS=4000000 --TXQueueSizeR1=4000 --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=5Mbps --outputFile=./output_files/temp.dat --packetSize=4 --interPacketTime=0.00000001 --initialPacketTrainLength=100 --separationPacketTrainLength=10000 --numAptPriorityProbes=100 --aptPriority='H'" */
+./waf --run "4-node-priority-queue-coordinated --ReceiveQueueSizeR2=10000 --TXQueueSizeR2=4000 --TXThresholdR2Bytes=3996 --procDelay=0.000001 --TXQueueSizeS=4000000 --TXQueueSizeR1=4000 --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=5Mbps --outputFile=./output_files/temp.dat --packetSize=4 --interPacketTime=0.00000001 --initialPacketTrainLength=100 --separationPacketTrainLength=10000 --numAptPriorityProbes=100 --aptPriority='H' --queueMode='b'" 
+
+*/
 
 #include <string>
 
@@ -38,16 +40,18 @@ main (int argc, char *argv[])
   bool backToBackPackets = false;
 
   // Network Settings
+  uint8_t queueMode = 'p';
   uint32_t ReceiveQueueSizeR2 = 655350000;
   uint32_t highPriorityQueueSize = 655350000;
   uint32_t lowPriorityQueueSize = 655350000;
   double procDelay = 1;
-  uint32_t TXQueueSizeR2 = 655350000;
-  uint32_t thresholdBytes = 655348900;
-
 
   uint32_t TXQueueSizeS = 655350000;
   uint32_t TXQueueSizeR1 = 655350000;
+  uint32_t TXQueueSizeR2 = 655350000;
+  uint32_t thresholdBytes = 655348900;
+  uint32_t thresholdPackets = 655348900;
+
   std::string SR1DataRate = "10Mbps";
   std::string R1R2DataRate = "10Mbps";
   std::string R2RDataRate = "5Mbps";
@@ -80,12 +84,14 @@ main (int argc, char *argv[])
   cmd.AddValue ("interPacketTime", "Time inbetween packets in seconds", interPacketTime);
   cmd.AddValue ("backToBackPackets", "overwrites interPacketTime so packets are sent exactly back to back", backToBackPackets);
 
+  cmd.AddValue ("queueMode", "Whether queues are based on bytes or packets. b for bytes, p for packets", queueMode);
   cmd.AddValue ("ReceiveQueueSizeR2", "The size of the incoming queue on R2", ReceiveQueueSizeR2);
   //cmd.AddValue ("highPriorityQueueSize", "", highPriorityQueueSize);
   //cmd.AddValue ("lowPriorityQueueSize", "", lowPriorityQueueSize);
   cmd.AddValue ("procDelay", "processing delay on R1", procDelay);
   cmd.AddValue ("TXQueueSizeR2", "The size of the outgoing queue on R2", TXQueueSizeR2);
-  cmd.AddValue ("TXThresholdR2", "The capacity of the tx queue on R2 before the scheduler starts waiting", thresholdBytes);
+  cmd.AddValue ("TXThresholdR2Bytes", "The capacity of the tx queue on R2 before the scheduler starts waiting", thresholdBytes);
+  cmd.AddValue ("TXThresholdR2Packets", "The capacity of the tx queue on R2 before the scheduler starts waiting", thresholdPackets);
 
   cmd.AddValue ("TXQueueSizeS", "The size of the outgoing queue on S", TXQueueSizeS);
   cmd.AddValue ("TXQueueSizeR1", "The size of the outgoing queue on R1", TXQueueSizeR1);
@@ -134,62 +140,100 @@ main (int argc, char *argv[])
 
   // Create the point to point net devices and channels
   PointToPointHelper p2p;
-  p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
-  //p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_PACKETS");
 
-  //SR1
+  if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_PACKETS");
+  }
+  else if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
+  }
+  else {
+    NS_LOG_UNCOND("invalid queueMode, value must be 'b' or 'p'");
+    exit(1);
+  }
+
+  //S->R1
   p2p.SetChannelAttribute ("Delay", (StringValue) SR1Delay);
   p2p.SetDeviceAttribute ("DataRate", (StringValue) SR1DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (SMtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeS));
+  if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (TXQueueSizeS));
+  }
+  else if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeS));
+  }
   NetDeviceContainer SR1_d = p2p.Install (SR1);
 
-  //p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
-
-  //R2R
+  //R2->R
   p2p.SetChannelAttribute ("Delay", (StringValue) R2RDelay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) R2RDataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (R2Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR2));
-  
+  if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (TXQueueSizeR2));    
+  }
+  else if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR2));
+  }
   Ptr<PointToPointNetDevice> netDev;
   NetDeviceContainer R2R_d = p2p.InstallCoordinatedSPQ (R2R, netDev);
   //NS_LOG_UNCOND("MTU = " << netDev->GetMtu());
 
-  //R1R2
+  //R1->R2
 
   // Set up priority queue model
   Ptr<PriorityQueueModel> spq = CreateObject<PriorityQueueModel> ();
   if (enablePQ==1) spq->Enable(); else spq->Disable();
 
   spq->EnableThreshold();
-  spq->SetThresholdBytes(thresholdBytes);
+  spq->SetQueueMode(queueMode);
+  if (queueMode == 'p') {
+    spq->SetThresholdPackets(thresholdPackets);
+  }
+  else if (queueMode == 'b') {
+    spq->SetThresholdBytes(thresholdBytes);
+  }
   spq->SetNodalProcessingTime (Seconds (procDelay));
+  spq->SetTxQueue(netDev->GetQueue());
   
   ObjectFactory queueFactory;
   queueFactory.SetTypeId (DropTailQueue::GetTypeId());
-  queueFactory.Set ("Mode", (StringValue) "QUEUE_MODE_BYTES");
-
   highPriorityQueueSize = ReceiveQueueSizeR2;
   lowPriorityQueueSize = ReceiveQueueSizeR2;
 
-  queueFactory.Set ("MaxBytes", UintegerValue (highPriorityQueueSize));
-  Ptr<Queue> highQueue = queueFactory.Create<DropTailQueue> ();
-  spq->SetHighQueue(highQueue);
+  Ptr<Queue> highQueue;
+  Ptr<Queue> lowQueue;
+  if (queueMode == 'p') {
+    queueFactory.Set ("Mode", (StringValue) "QUEUE_MODE_PACKETS");
 
-  queueFactory.Set ("MaxBytes", UintegerValue (lowPriorityQueueSize));
-  Ptr<Queue> lowQueue = queueFactory.Create<DropTailQueue> ();
-  spq->SetLowQueue(lowQueue);  
+    queueFactory.Set ("MaxPackets", UintegerValue (highPriorityQueueSize));    
+    highQueue = queueFactory.Create<DropTailQueue> ();
+
+    queueFactory.Set ("MaxPackets", UintegerValue (lowPriorityQueueSize));
+    lowQueue = queueFactory.Create<DropTailQueue> ();
+
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (TXQueueSizeR1));
+  }
+  else if (queueMode =='b') {
+    queueFactory.Set ("Mode", (StringValue) "QUEUE_MODE_BYTES");    
+
+    queueFactory.Set ("MaxBytes", UintegerValue (highPriorityQueueSize));
+    highQueue = queueFactory.Create<DropTailQueue> ();
+
+    queueFactory.Set ("MaxBytes", UintegerValue (lowPriorityQueueSize));
+    lowQueue = queueFactory.Create<DropTailQueue> ();
+
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR1));
+  }
+
+  spq->SetHighQueue(highQueue);
+  spq->SetLowQueue(lowQueue);
 
   p2p.SetDeviceAttribute ("PriorityQueueModel", (PointerValue) spq);
 
   p2p.SetChannelAttribute ("Delay", (StringValue) R1R2Delay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) R1R2DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (R1Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR1));
   NetDeviceContainer R1R2_d = p2p.Install (R1R2);
-
-  spq->SetTxQueue(netDev->GetQueue());
 
   // Create addresses
   Ipv4AddressHelper ipv4;
@@ -229,16 +273,17 @@ main (int argc, char *argv[])
 //  if (topologyNodes == '4')
   sender = sendHelper.Install (S.Get (0));
 
-  sendHelper.GetSender()->SetLogFileName (outputFile);  // This is terrible, fix it later in all 3 modules
+  // ugly hacks, fix it later in all 3 modules
+  sendHelper.GetSender()->SetLogFileName (outputFile);
   if (backToBackPackets)
-    sendHelper.GetSender()->SetIntervalBackToBack (SR1DataRate);  // This is terrible, fix it later in all 3 modules  
+    sendHelper.GetSender()->SetIntervalBackToBack (SR1DataRate);
   sender.Start (Seconds (startTime));
   sender.Stop (Seconds (endTime-1));
 
   // Create, configure, and install ProcessingDelayReceiver
   PriorityQueueReceiverHelper recvHelper;
   ApplicationContainer receiver = recvHelper.Install (R.Get (0));
-  recvHelper.GetReceiver()->SetLogFileName (outputFile); // This is terrible programming, fix it later in all 3 modules
+  recvHelper.GetReceiver()->SetLogFileName (outputFile);
   receiver.Start (Seconds (startTime));
   receiver.Stop (Seconds (endTime));
 

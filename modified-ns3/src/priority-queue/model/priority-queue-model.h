@@ -48,8 +48,13 @@ public:
   void EnableThreshold(void);
   void SetTxQueue (Ptr<Queue> queue);
 
+  void SetQueueMode (uint8_t mode);
+
   void SetThresholdBytes (uint32_t threshold);
   uint32_t GetThresholdBytes (void);
+  void SetThresholdPackets (uint32_t threshold);
+  uint32_t GetThresholdPackets (void);
+
   bool CheckThreshold (uint32_t size);
 
 private:
@@ -73,7 +78,9 @@ private:
 
 /* Coordinated */
   bool m_enableThreshold;
+  uint8_t m_queueMode;
   uint32_t m_thresholdBytes;
+  uint32_t m_thresholdPackets;
   Ptr<Queue> m_txQueue;
 /* Coordinated */
 
