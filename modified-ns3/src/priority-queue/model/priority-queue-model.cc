@@ -50,11 +50,14 @@ PriorityQueueModel::PriorityQueueModel ()
      m_isProcessing (false),
      m_processNext (true),
      m_nodalProcessingDelay (Seconds (0)),
-     m_enableThreshold (false),
      m_queueMode ('p'),
+     /* Coordinated */
+     m_enableThreshold (false),
      m_thresholdBytes (0),
      m_thresholdPackets (0),
      m_txQueue (0)
+     /* Coordinated */
+
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -359,77 +362,3 @@ PriorityQueueModel::CheckThreshold (uint32_t size)
 /* Coordinated */
 
 } // namespace ns3
-
-/*
-uint32_t
-PriorityQueueModel::Process (Ptr<Packet> packet)
-{
-  NS_LOG_FUNCTION (this << packet);
-  NS_LOG_INFO ("PriorityQueue: Received packet, UID = " << packet->GetUid());
-  uint16_t priority = Classify (packet);
-
-  if (priority == 1 && m_highQueue->Enqueue (packet))
-    {
-      if (m_isProcessing)
-        {
-          NS_LOG_INFO ("\tQueueing packet.");
-        }
-      else
-        {
-          NS_LOG_INFO ("\tProcessing packet.");
-          Ptr<Packet> next = m_highQueue->Dequeue ();
-          Simulator::Schedule(m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-          m_isProcessing = true;
-        }
-    }
-  else if (priority == 0 && m_lowQueue->Enqueue (packet))
-    {
-      if (m_isProcessing)
-        {
-          NS_LOG_INFO ("\tQueueing packet.");
-        }
-      else
-        {
-          NS_LOG_INFO ("\tProcessing packet.");
-          Ptr<Packet> next = m_lowQueue->Dequeue ();
-          Simulator::Schedule(m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-          m_isProcessing = true;
-        }
-    }
-  else
-    {
-      NS_LOG_INFO ("\tQueue overflow!");
-      return 0;
-    }
-  return 1;
-}
-*/
-/*
-void
-PriorityQueueModel::ProcessComplete (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this << p);
-  NS_LOG_INFO ("PriorityQueue: Processed packet, UID = " << p->GetUid());
-
-  // Choose next Packet
-  Ptr<Packet> next;
-  if (next = m_highQueue->Dequeue())
-    {
-      NS_LOG_INFO ("\tProcessing high priority packet, UID = " << next->GetUid());
-      Simulator::Schedule (m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-    }
-  else if (next = m_lowQueue->Dequeue())  
-    {
-      NS_LOG_INFO ("\tProcessing low priority packet, UID = " << next->GetUid());
-      Simulator::Schedule (m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-    }
-  else
-    {
-      NS_LOG_INFO ("\tNo more packets in queue");
-      m_isProcessing = false;
-    }
-  // Indicate we are ready to send this packet and call receive again
-  m_processNext = false;
-  m_netDevice->Receive (p);
-}
-*/
