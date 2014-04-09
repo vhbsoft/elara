@@ -174,8 +174,10 @@ main (int argc, char *argv[])
   else if (queueMode == 'b') {
     p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR2));
   }
+
+  // Coordinated
   Ptr<PointToPointNetDevice> netDev;
-  NetDeviceContainer R2R_d = p2p.InstallCoordinatedSPQ (R2R, netDev);
+  NetDeviceContainer R2R_d = p2p.InstallCoordinated (R2R, netDev);
   //NS_LOG_UNCOND("MTU = " << netDev->GetMtu());
 
   //R1->R2
@@ -183,7 +185,9 @@ main (int argc, char *argv[])
   // Set up priority queue model
   Ptr<PriorityQueueModel> spq = CreateObject<PriorityQueueModel> ();
   if (enablePQ==1) spq->Enable(); else spq->Disable();
+  spq->SetNodalProcessingTime (Seconds (procDelay));
 
+  // Coordinated
   spq->EnableThreshold();
   spq->SetQueueMode(queueMode);
   if (queueMode == 'p') {
@@ -192,9 +196,9 @@ main (int argc, char *argv[])
   else if (queueMode == 'b') {
     spq->SetThresholdBytes(thresholdBytes);
   }
-  spq->SetNodalProcessingTime (Seconds (procDelay));
   spq->SetTxQueue(netDev->GetQueue());
   
+  // Queues
   ObjectFactory queueFactory;
   queueFactory.SetTypeId (DropTailQueue::GetTypeId());
   highPriorityQueueSize = ReceiveQueueSizeR2;

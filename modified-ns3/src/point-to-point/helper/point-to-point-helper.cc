@@ -233,16 +233,16 @@ PointToPointHelper::EnableAsciiInternal (
   Config::Connect (oss.str (), MakeBoundCallback (&AsciiTraceHelper::DefaultDropSinkWithContext, stream));
 }
 
-//******CoordinatedSPQCode***********//
+//******CoordinatedCode***********//
 NetDeviceContainer 
-PointToPointHelper::InstallCoordinatedSPQ (NodeContainer c, Ptr<PointToPointNetDevice> &netDev)
+PointToPointHelper::InstallCoordinated (NodeContainer c, Ptr<PointToPointNetDevice> &netDev)
 {
   NS_ASSERT (c.GetN () == 2);
-  return InstallCoordinatedSPQ (c.Get (0), c.Get (1), netDev);
+  return InstallCoordinated (c.Get (0), c.Get (1), netDev);
 }
 
 NetDeviceContainer 
-PointToPointHelper::InstallCoordinatedSPQ (Ptr<Node> a, Ptr<Node> b, Ptr<PointToPointNetDevice> &netDev)
+PointToPointHelper::InstallCoordinated (Ptr<Node> a, Ptr<Node> b, Ptr<PointToPointNetDevice> &netDev)
 {
   NetDeviceContainer container;
 
@@ -302,7 +302,7 @@ PointToPointHelper::InstallCoordinatedSPQ (Ptr<Node> a, Ptr<Node> b, Ptr<PointTo
 
   return container;
 }
-//******CoordinatedSPQCode***********//
+//******CoordinatedCode***********//
 
 NetDeviceContainer 
 PointToPointHelper::Install (NodeContainer c)
