@@ -3,7 +3,7 @@
 
 out :: Queue(10000000)->BandwidthShaper(1000000)->
 //Print("->eth1", CONTENTS 'NONE')->
-                                             ToDevice(eth1);
+		  ToDevice(eth1);
 
 FromDevice(eth0, PROMISC true)->
 //Print("eth0->", CONTENTS 'NONE')->
@@ -17,6 +17,6 @@ FromDevice(eth0, PROMISC true)->
 
 FromDevice(eth1, PROMISC true)->
 //Print("eth1->", CONTENTS 'NONE')->
-				Queue->
-//Print("->eth0", CONTENTS 'NONE')->
-					ToDevice(eth0)
+		  Queue->
+		  //Print("->eth0", CONTENTS 'NONE')->
+		  	   ToDevice(eth0)
