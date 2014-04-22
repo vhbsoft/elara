@@ -1,5 +1,5 @@
-//simple_comp.click
-//simple compression switch
+// simple_comp.click
+// simple compression switch
 
 
 out :: Queue(10000000)->BandwidthShaper(1000000)->
