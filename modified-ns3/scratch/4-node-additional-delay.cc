@@ -29,6 +29,8 @@ main (int argc, char *argv[])
 
   // Network Settings
   double procDelay = 0.000000001;
+
+  char queueMode = 'p';
   uint32_t TXQueueSizeS = 655350000;
   uint32_t TXQueueSizeR1 = 655350000;
   uint32_t TXQueueSizeR2 = 655350000;
@@ -62,12 +64,15 @@ main (int argc, char *argv[])
   cmd.AddValue ("interPacketTime", "Time inbetween packets in seconds", interPacketTime);
 
   cmd.AddValue ("procDelay", "processing delay on R1", procDelay);
+
+  cmd.AddValue ("queueMode", "Whether queues are based on bytes or packets. b for bytes, p for packets", queueMode);
   cmd.AddValue ("TXQueueSizeS", "The size of the outgoing queue on S", TXQueueSizeS);
   cmd.AddValue ("TXQueueSizeR1", "The size of the outgoing queue on R1", TXQueueSizeR1);
   cmd.AddValue ("TXQueueSizeR2", "The size of the outgoing queue on R2", TXQueueSizeR2);
   cmd.AddValue ("ReceiveQueueSizeR1", "The size of the incoming queue on R1", ReceiveQueueSizeR1);
   cmd.AddValue ("ReceiveQueueSizeR2", "The size of the incoming queue on R2", ReceiveQueueSizeR2);
   cmd.AddValue ("ReceiveQueueSizeR", "The size of the incoming queue on R", ReceiveQueueSizeR);
+
   cmd.AddValue ("SR1DataRate", "The transmission rate on p2pchannel SR1", SR1DataRate);
   cmd.AddValue ("R1R2DataRate", "The transmission rate on p2pchannel R1R2", R1R2DataRate);
   cmd.AddValue ("R2RDataRate", "The transmission rate on p2pchannel R2R", R2RDataRate);
@@ -110,17 +115,37 @@ main (int argc, char *argv[])
   stack.Install (allNodes); 
 
   // Create the point to point net devices and channels
+
   PointToPointHelper p2p;
-  p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
+  //p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
   //p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_PACKETS");
-  p2p.SetRxQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
+  //p2p.SetRxQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
+
+  if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "Mode", EnumValue(DropTailQueue::QUEUE_MODE_BYTES));
+    p2p.SetRxQueue("ns3::DropTailQueue", "Mode", EnumValue(DropTailQueue::QUEUE_MODE_BYTES));
+  }
+  else if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "Mode", EnumValue(DropTailQueue::QUEUE_MODE_PACKETS));
+    p2p.SetRxQueue("ns3::DropTailQueue", "Mode", EnumValue(DropTailQueue::QUEUE_MODE_PACKETS));
+  }
+  else {
+    NS_LOG_UNCOND("invalid queueMode, value must be 'b' or 'p'");
+    exit(1);
+  }
 
   //SR1
   p2p.SetChannelAttribute ("Delay", (StringValue) SR1Delay);
   p2p.SetDeviceAttribute ("DataRate", (StringValue) SR1DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (SMtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeS));
-  p2p.SetRxQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (ReceiveQueueSizeR1));
+  if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeS));
+    p2p.SetRxQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (ReceiveQueueSizeR1));
+  }
+  else if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (TXQueueSizeS));
+    p2p.SetRxQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (ReceiveQueueSizeR1));
+  }
   NetDeviceContainer SR1_d = p2p.Install (SR1);
 
   //p2p.SetQueue("ns3::DropTailQueue", "Mode", (StringValue) "QUEUE_MODE_BYTES");
@@ -129,8 +154,14 @@ main (int argc, char *argv[])
   p2p.SetChannelAttribute ("Delay", (StringValue) R2RDelay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) R2RDataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (R2Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR2));
-  p2p.SetRxQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (ReceiveQueueSizeR));
+  if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR2));
+    p2p.SetRxQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (ReceiveQueueSizeR));
+  }
+  else if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (TXQueueSizeR2));
+    p2p.SetRxQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (ReceiveQueueSizeR));
+  }
   NetDeviceContainer R2R_d = p2p.Install (R2R);
 
   //R1R2
@@ -145,8 +176,14 @@ main (int argc, char *argv[])
   p2p.SetChannelAttribute ("Delay", (StringValue) R1R2Delay); 
   p2p.SetDeviceAttribute ("DataRate", (StringValue) R1R2DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (R1Mtu));
-  p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR1));
-  p2p.SetRxQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (ReceiveQueueSizeR2));
+  if (queueMode == 'b') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (TXQueueSizeR1));
+    p2p.SetRxQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue (ReceiveQueueSizeR2));
+  }
+  else if (queueMode == 'p') {
+    p2p.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (TXQueueSizeR1));
+    p2p.SetRxQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue (ReceiveQueueSizeR2));
+  }
   NetDeviceContainer R1R2_d = p2p.Install (R1R2);
 
   // Create addresses

@@ -50,9 +50,14 @@ PriorityQueueModel::PriorityQueueModel ()
      m_isProcessing (false),
      m_processNext (true),
      m_nodalProcessingDelay (Seconds (0)),
+     m_queueMode ('p'),
+     /* Coordinated */
      m_enableThreshold (false),
      m_thresholdBytes (0),
+     m_thresholdPackets (0),
      m_txQueue (0)
+     /* Coordinated */
+
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -293,6 +298,12 @@ PriorityQueueModel::SetTxQueue (Ptr<Queue> queue)
   m_txQueue = queue;
 }
 
+void
+PriorityQueueModel::SetQueueMode (uint8_t mode)
+{
+  m_queueMode = mode;
+}
+
 void 
 PriorityQueueModel::SetThresholdBytes (uint32_t threshold)
 {
@@ -305,97 +316,49 @@ PriorityQueueModel::GetThresholdBytes (void)
   return m_thresholdBytes;
 }
 
+void 
+PriorityQueueModel::SetThresholdPackets (uint32_t threshold)
+{
+  m_thresholdPackets = threshold;
+}
+
+uint32_t 
+PriorityQueueModel::GetThresholdPackets (void)
+{
+  return m_thresholdPackets;
+}
+
 bool 
 PriorityQueueModel::CheckThreshold (uint32_t size)
 {
-  //NS_LOG_UNCOND("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
-  NS_LOG_INFO("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
-  if (m_enableThreshold && m_txQueue && m_txQueue->GetNBytes() + size >= m_thresholdBytes)
+  if (m_enableThreshold && m_txQueue)
     {
-      //NS_LOG_UNCOND ("\tTxQueue is filled past threshold! waiting 1 processing cycle");      
-      NS_LOG_INFO ("\tTxQueue is filled past threshold! Waiting...");
-      //NS_LOG_UNCOND ("\tTxQueue is filled past threshold! Waiting...");
-      return false;
+      if (m_queueMode == 'p')
+        {
+          NS_LOG_UNCOND("TxQueue: " << m_txQueue->GetNPackets() << " / " << m_thresholdPackets << " packets");
+          NS_LOG_INFO("TxQueue: " << m_txQueue->GetNPackets() << " / " << m_thresholdPackets << " packets");
+          //NS_LOG_UNCOND("total packets: " << m_txQueue->GetTotalReceivedPackets());
+          if (m_txQueue->GetNPackets() + 1 >= m_thresholdPackets)
+            {
+              NS_LOG_INFO ("\tTxQueue is filled past threshold! Waiting...");
+              NS_LOG_UNCOND ("\tTxQueue is filled past threshold! Waiting...");
+              return false;
+            }
+        }
+      else if (m_queueMode == 'b')
+        {
+          NS_LOG_UNCOND("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
+          NS_LOG_INFO("TxQueue: " << m_txQueue->GetNBytes() << " / " << m_thresholdBytes << " bytes");
+          if (m_txQueue->GetNBytes() + size >= m_thresholdBytes) 
+            {
+              NS_LOG_INFO ("\tTxQueue is filled past threshold! Waiting...");
+              //NS_LOG_UNCOND ("\tTxQueue is filled past threshold! Waiting...");
+              return false;
+            }
+        }
     }
-  else
-    {
-      return true;
-    }
+  return true;
 }
 /* Coordinated */
 
 } // namespace ns3
-
-/*
-uint32_t
-PriorityQueueModel::Process (Ptr<Packet> packet)
-{
-  NS_LOG_FUNCTION (this << packet);
-  NS_LOG_INFO ("PriorityQueue: Received packet, UID = " << packet->GetUid());
-  uint16_t priority = Classify (packet);
-
-  if (priority == 1 && m_highQueue->Enqueue (packet))
-    {
-      if (m_isProcessing)
-        {
-          NS_LOG_INFO ("\tQueueing packet.");
-        }
-      else
-        {
-          NS_LOG_INFO ("\tProcessing packet.");
-          Ptr<Packet> next = m_highQueue->Dequeue ();
-          Simulator::Schedule(m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-          m_isProcessing = true;
-        }
-    }
-  else if (priority == 0 && m_lowQueue->Enqueue (packet))
-    {
-      if (m_isProcessing)
-        {
-          NS_LOG_INFO ("\tQueueing packet.");
-        }
-      else
-        {
-          NS_LOG_INFO ("\tProcessing packet.");
-          Ptr<Packet> next = m_lowQueue->Dequeue ();
-          Simulator::Schedule(m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-          m_isProcessing = true;
-        }
-    }
-  else
-    {
-      NS_LOG_INFO ("\tQueue overflow!");
-      return 0;
-    }
-  return 1;
-}
-*/
-/*
-void
-PriorityQueueModel::ProcessComplete (Ptr<Packet> p)
-{
-  NS_LOG_FUNCTION (this << p);
-  NS_LOG_INFO ("PriorityQueue: Processed packet, UID = " << p->GetUid());
-
-  // Choose next Packet
-  Ptr<Packet> next;
-  if (next = m_highQueue->Dequeue())
-    {
-      NS_LOG_INFO ("\tProcessing high priority packet, UID = " << next->GetUid());
-      Simulator::Schedule (m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-    }
-  else if (next = m_lowQueue->Dequeue())  
-    {
-      NS_LOG_INFO ("\tProcessing low priority packet, UID = " << next->GetUid());
-      Simulator::Schedule (m_nodalProcessingDelay, &PriorityQueueModel::ProcessComplete, this, next);
-    }
-  else
-    {
-      NS_LOG_INFO ("\tNo more packets in queue");
-      m_isProcessing = false;
-    }
-  // Indicate we are ready to send this packet and call receive again
-  m_processNext = false;
-  m_netDevice->Receive (p);
-}
-*/

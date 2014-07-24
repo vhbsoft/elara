@@ -34,9 +34,11 @@ namespace ns3 {
 class Queue;
 class NetDevice;
 class Node;
-//******CoordinatedSPQCode***********//
+//******CoordinatedSPQCode***********////******ProcessingDelayCode***********//
 class PointToPointNetDevice;
-//******CoordinatedSPQCode***********//
+//******CoordinatedSPQCode***********////******ProcessingDelayCode***********//
+
+
 
 /**
  * \brief Build a set of PointToPointNetDevice objects
@@ -79,14 +81,13 @@ public:
                  std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
                  std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue ());
 //******ProcessingDelayCode***********//
-
   void SetRxQueue (std::string type,
                  std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
                  std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
                  std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
                  std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue ());
-
 //******ProcessingDelayCode***********//
+
   /**
    * Set an attribute value to be propagated to each NetDevice created by the
    * helper.
@@ -111,12 +112,11 @@ public:
    */
   void SetChannelAttribute (std::string name, const AttributeValue &value);
 
-//******CoordinatedSPQCode***********//
-  NetDeviceContainer InstallCoordinatedSPQ (NodeContainer c, Ptr<PointToPointNetDevice> &netDev);
+//******CoordinatedCode***********//
+  NetDeviceContainer InstallCoordinated (NodeContainer c, Ptr<PointToPointNetDevice> &netDev);
 
-  NetDeviceContainer InstallCoordinatedSPQ (Ptr<Node> a, Ptr<Node> b, Ptr<PointToPointNetDevice> &netDev);
-
-//******CoordinatedSPQCode***********//
+  NetDeviceContainer InstallCoordinated (Ptr<Node> a, Ptr<Node> b, Ptr<PointToPointNetDevice> &netDev);
+//******CoordinatedCode***********//
 
   /**
    * \param c a set of nodes

@@ -44,13 +44,19 @@ public:
 
   Ptr<Packet> ProcessComplete (uint64_t uid);
 
-  // Coordinated
+  void SetQueueMode (uint8_t mode);
+
+  /* Coordinated */
   void EnableThreshold(void);
   void SetTxQueue (Ptr<Queue> queue);
 
   void SetThresholdBytes (uint32_t threshold);
   uint32_t GetThresholdBytes (void);
+  void SetThresholdPackets (uint32_t threshold);
+  uint32_t GetThresholdPackets (void);
+
   bool CheckThreshold (uint32_t size);
+  /* Coordinated */
 
 private:
 
@@ -71,11 +77,14 @@ private:
   Ptr<Queue> m_highQueue;
   Ptr<Queue> m_lowQueue;
 
-/* Coordinated */
+  uint8_t m_queueMode;
+
+  /* Coordinated */
   bool m_enableThreshold;
   uint32_t m_thresholdBytes;
+  uint32_t m_thresholdPackets;
   Ptr<Queue> m_txQueue;
-/* Coordinated */
+  /* Coordinated */
 
 };
 
