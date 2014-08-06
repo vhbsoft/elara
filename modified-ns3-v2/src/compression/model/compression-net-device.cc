@@ -716,8 +716,6 @@ CompressionNetDevice::DecompressPacket (Ptr<Packet> p) const
 
   compHead.SetData (destData, destSize);
   p->AddHeader (compHead);
-  free (srcData);
-  free (destData);
   NS_LOG_INFO ("Decompressed data to " << destSize << " bytes");
   free (srcData);
   free (destData);
