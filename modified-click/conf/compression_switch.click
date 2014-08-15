@@ -22,12 +22,12 @@ FromDevice(eth0, PROMISC true)->
 	ipclass[1]->Strip(20)->Strip(20)->tcpcomp :: Compression;
 	ipclass[2]->Unstrip(14)->out;
 
-	udpcomp[1]->Unstrip(8)->Unstrip(20)->Unstrip(14)-out;	
+	udpcomp[1]->Unstrip(8)->Unstrip(20)->Unstrip(14)->out;	
 	udpcomp[0]->Unstrip(8)->Unstrip(20)->Unstrip(14)->
 		//Print("compress", CONTENTS 'NONE')->
 	        out;
 
-	tcpcomp[1]->Unstrip(8)->Unstrip(20)->Unstrip(14)-out;
+	tcpcomp[1]->Unstrip(8)->Unstrip(20)->Unstrip(14)->out;
 	tcpcomp[0]->Unstrip(8)->Unstrip(20)->Unstrip(14)->
 		//Print("compress", CONTENTS 'NONE')->
 	        out;
