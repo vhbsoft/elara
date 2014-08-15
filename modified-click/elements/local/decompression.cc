@@ -1,6 +1,5 @@
 #include <click/config.h>
 #include "decompression.hh"
-#include <clicknet/udp.h>
 CLICK_DECLS
 
 Decompression::Decompression()
@@ -17,23 +16,18 @@ Decompression::push(int, Packet *p_in)
 
   WritablePacket* p_out = p_in->uniqueify();
 
-  uint8_t* start = (uint8_t*) p_out->transport_header()+8;
-  uint16_t comp_size = p_out->length()-p_out->transport_header_offset()-8;
+  uint8_t* start = (uint8_t*) p_out->data();
+  uint16_t comp_size = p_out->length();
   uint16_t uncomp_size = MAX_PACKET_SIZE;
 
-  struct click_udp* udp = (struct click_udp*) p_out->transport_header();
-
-  if (ntohs(udp->uh_dport) == 9876 && ZlibDecompression (start, buf, comp_size, uncomp_size))
+  if (ZlibDecompression (start, buf, comp_size, uncomp_size))
     {
       if (uncomp_size > comp_size)
         p_out = p_out->put(uncomp_size - comp_size);
       else
         p_out->take(comp_size - uncomp_size);
 
-      memcpy((uint8_t*) p_out->transport_header()+8, buf, uncomp_size);
-
-      struct click_ip* ip = (struct click_ip*) p_out->ip_header();
-      ip->ip_len = htons(uncomp_size+28);
+      memcpy((uint8_t*) p_out->data(), buf, uncomp_size);
 
       output(0).push(p_out);
     }
