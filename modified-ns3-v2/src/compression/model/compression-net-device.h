@@ -31,6 +31,8 @@
 
 #include <zlib.h>
 
+#define MAX_PACKET_SIZE 10000
+
 namespace ns3 {
 
 class Queue;
@@ -485,13 +487,13 @@ private:
    * Compresses the data in p, returns true if the compression succeeded
    *
    */
-  void CompressPacket (Ptr<Packet> p) const;
+  void CompressPacket (Ptr<Packet> p);
 
   /** 
    * Decompresses the compressed data in p, returns true if the decompression succeeded
    *
    */
-  void DecompressPacket (Ptr<Packet> p) const;
+  void DecompressPacket (Ptr<Packet> p);
 
   /**
    * Compresses the srcSize bytes starting at srcData and writes to destData,
@@ -499,20 +501,24 @@ private:
    * afterwards destSize will be updated to reflect the compressed size
    *
    */
-  bool ZlibCompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t &destSize) const;
+  uint32_t ZlibCompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t destSize) const;
 
   /**
    * Decompresses the data in srcData to destData,
    * reads srcSize bytes and expects
    *
    */
-  bool ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t &destSize) const;
+  uint32_t ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t destSize) const;
 
   /**
    * TODO: Add comments
    *
    */
   bool m_enableCompression;
+
+  uint8_t m_srcData[MAX_PACKET_SIZE];
+  uint8_t m_dstData[MAX_PACKET_SIZE];
+
 };
 
 } // namespace ns3

@@ -671,10 +671,17 @@ CompressionNetDevice::GetEnableCompression(void) const
 }
 
 void
-CompressionNetDevice::CompressPacket (Ptr<Packet> p) const
+CompressionNetDevice::CompressPacket (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION_NOARGS ();
   uint32_t srcSize = p->GetSize();
+
+  if (srcSize < MAX_PACKET_SIZE)
+    {
+      NS_LOG_UNCOND ("Packet is too large for compression!\nMAX_PACKET_SIZE = " << MAX_PACKET_SIZE 
+                     << "\npacket size = " << srcSize 
+                     << "\nChange MAX_PACKET_SIZE in compression-net-device.h");
+    }
 
   NS_LOG_INFO ("Received " << srcSize << " bytes for compression UID: " << p->GetUid());
 
@@ -682,11 +689,11 @@ CompressionNetDevice::CompressPacket (Ptr<Packet> p) const
   compHead.SetSize(srcSize);
   p->RemoveHeader (compHead);
 
-  uint8_t *srcData = (uint8_t*) malloc(srcSize);
+  uint8_t *srcData = m_srcData;
   compHead.GetData (srcData, srcSize);
-  uint32_t destSize = srcSize*2;
-  uint8_t *destData = (uint8_t*) malloc(destSize);
-  ZlibCompression (srcData, destData, srcSize, destSize);
+  uint32_t destSize = MAX_PACKET_SIZE;
+  uint8_t *destData = m_dstData;
+  destSize = ZlibCompression (srcData, destData, srcSize, destSize);
 
   compHead.SetData (destData, destSize);
   p->AddHeader (compHead);
@@ -697,10 +704,17 @@ CompressionNetDevice::CompressPacket (Ptr<Packet> p) const
 }
 
 void
-CompressionNetDevice::DecompressPacket (Ptr<Packet> p) const
+CompressionNetDevice::DecompressPacket (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION_NOARGS ();
   uint32_t srcSize = p->GetSize();
+
+  if (srcSize < MAX_PACKET_SIZE)
+    {
+      NS_LOG_UNCOND ("Packet is too large for decompression!\nMAX_PACKET_SIZE = " << MAX_PACKET_SIZE 
+                     << "\npacket size = " << srcSize 
+                     << "\nChange MAX_PACKET_SIZE in compression-net-device.h");
+    }
 
   NS_LOG_INFO ("Received " << srcSize << " bytes for decompression UID: " << p->GetUid());
 
@@ -708,11 +722,11 @@ CompressionNetDevice::DecompressPacket (Ptr<Packet> p) const
   compHead.SetSize (srcSize);
   p->RemoveHeader (compHead);
 
-  uint8_t *srcData = (uint8_t*) malloc(srcSize);
+  uint8_t *srcData = m_srcData;
   compHead.GetData (srcData, srcSize);
-  uint32_t destSize = srcSize*32;
-  uint8_t *destData = (uint8_t*) malloc(destSize);
-  ZlibDecompression (srcData, destData, srcSize, destSize);
+  uint32_t destSize = MAX_PACKET_SIZE;
+  uint8_t *destData = m_dstData;
+  destSize = ZlibDecompression (srcData, destData, srcSize, destSize);
 
   compHead.SetData (destData, destSize);
   p->AddHeader (compHead);
@@ -722,8 +736,8 @@ CompressionNetDevice::DecompressPacket (Ptr<Packet> p) const
   return;
 }
 
-bool
-CompressionNetDevice::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t &destSize) const
+uint32_t
+CompressionNetDevice::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t destSize) const
 {
   z_stream strm;
   strm.zalloc = 0;
@@ -737,6 +751,11 @@ CompressionNetDevice::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint
     {
       int res = deflate(&strm, Z_NO_FLUSH);
       NS_ASSERT(res == Z_OK);
+      if (strm.avail_out == 0)
+        {
+          NS_LOG_UNCOND ("Not enough room in packet buffer!\n"
+                         << "Increase MAX_PACKET_SIZE in compression-net-device.h");
+        } 
     }
   int deflate_res = Z_OK;
   while (deflate_res == Z_OK)
@@ -746,11 +765,11 @@ CompressionNetDevice::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint
   NS_ASSERT(deflate_res == Z_STREAM_END);
   destSize = strm.total_out;
   deflateEnd(&strm);
-  return true;
+  return destSize;
 }
 
-bool
-CompressionNetDevice::ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t &destSize) const
+uint32_t
+CompressionNetDevice::ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint32_t srcSize, uint32_t destSize) const
 {
   z_stream strm;
   strm.zalloc = 0;
@@ -761,10 +780,15 @@ CompressionNetDevice::ZlibDecompression (uint8_t *srcData, uint8_t *destData, ui
   strm.avail_out = destSize;
   inflateInit(&strm);
   int inflate_res = inflate(&strm, Z_FINISH);
+  if (strm.avail_out == 0)
+    {
+      NS_LOG_UNCOND ("Not enough room in packet buffer!\n"
+                     << "Increase MAX_PACKET_SIZE in compression-net-device.h");
+    } 
   NS_ASSERT(inflate_res == Z_STREAM_END);
   destSize = strm.total_out;
   inflateEnd(&strm);
-  return true;
+  return destSize;
 }
 
 } // namespace ns3
