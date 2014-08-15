@@ -20,14 +20,14 @@ Decompression::push(int, Packet *p_in)
   uint16_t comp_size = p_out->length();
   uint16_t uncomp_size = MAX_PACKET_SIZE;
 
-  if (ZlibDecompression (start, buf, comp_size, uncomp_size))
+  if (ZlibDecompression (start, m_buf, comp_size, uncomp_size))
     {
       if (uncomp_size > comp_size)
         p_out = p_out->put(uncomp_size - comp_size);
       else
         p_out->take(comp_size - uncomp_size);
 
-      memcpy((uint8_t*) p_out->data(), buf, uncomp_size);
+      memcpy((uint8_t*) p_out->data(), m_buf, uncomp_size);
 
       output(0).push(p_out);
     }
