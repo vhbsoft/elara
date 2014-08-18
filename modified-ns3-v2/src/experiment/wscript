@@ -1,0 +1,56 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def build(bld):
+    module = bld.create_ns3_module('experiment', ['core'])
+    module.source = [
+        'model/exp-data-header.cc',
+        'model/seq-header.cc',
+        'model/seq32-header.cc',
+        'model/seq16-header.cc',
+
+        'model/compression-app-layer.cc',
+        'model/compression-packet-gen.cc',
+        'model/compression-sender.cc',
+        'model/compression-receiver.cc',
+        'helper/compression-sender-receiver-helper.cc',
+
+        'model/priority-queue-sender.cc',
+        'model/priority-queue-receiver.cc',
+        'helper/priority-queue-helper.cc'
+        ]
+
+    module_test = bld.create_ns3_module_test_library('experiment')
+    module_test.source = [
+        'test/experiment-test-suite.cc',
+        ]
+
+    headers = bld.new_task_gen(features=['ns3header'])
+    headers.module = 'experiment'
+    headers.source = [
+        'model/exp-data-header.h',
+        'model/seq-header.h',
+        'model/seq32-header.h',
+        'model/seq16-header.h',
+
+        'model/compression-app-layer.h',
+        'model/compression-packet-gen.h',
+        'model/compression-sender.h',
+        'model/compression-receiver.h',
+        'helper/compression-sender-receiver-helper.h',
+
+        'model/priority-queue-sender.h',
+        'model/priority-queue-receiver.h',
+        'helper/priority-queue-helper.h'
+        ]
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.add_subdirs('examples')
+
+    # bld.ns3_python_bindings()
+
