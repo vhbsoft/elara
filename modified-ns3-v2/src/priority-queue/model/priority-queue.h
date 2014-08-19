@@ -9,7 +9,7 @@
 
 namespace ns3 {
 
-  class TraceContainer;
+class TraceContainer;
 
 class PriorityQueue : public Queue {
 public:
@@ -33,11 +33,15 @@ private:
   uint16_t Classify (Ptr<Packet> p);
 
   std::queue<Ptr<Packet> > m_highPackets;
-  std::queue<Ptr<Packet> > m_lowPackets;
-  uint32_t m_maxPackets;
-  uint32_t m_maxBytes;
   uint32_t m_bytesInHighQueue;
+  uint32_t m_highMaxPackets;
+  uint32_t m_highMaxBytes;
+
+  std::queue<Ptr<Packet> > m_lowPackets;
   uint32_t m_bytesInLowQueue;
+  uint32_t m_lowMaxPackets;
+  uint32_t m_lowMaxBytes;
+
   QueueMode m_mode;
 
 };

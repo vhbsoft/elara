@@ -32,15 +32,28 @@ PriorityQueue::GetTypeId (void)
                    MakeEnumAccessor (&PriorityQueue::SetMode),
                    MakeEnumChecker (QUEUE_MODE_BYTES, "QUEUE_MODE_BYTES",
                                     QUEUE_MODE_PACKETS, "QUEUE_MODE_PACKETS"))
-    .AddAttribute ("MaxPackets",
-                   "The maximum number of packets accepted by each PriorityQueue.",
+    .AddAttribute ("HighPriorityMaxPackets",
+                   "The maximum number of packets accepted by the high priority queue.",
                    UintegerValue (100),
-                   MakeUintegerAccessor (&PriorityQueue::m_maxPackets),
+                   MakeUintegerAccessor (&PriorityQueue::m_highMaxPackets),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("MaxBytes",
-                   "The maximum number of bytes accepted by each PriorityQueue.",
+
+    .AddAttribute ("LowPriorityMaxPackets",
+                   "The maximum number of packets accepted by the low priority queue.",
+                   UintegerValue (100),
+                   MakeUintegerAccessor (&PriorityQueue::m_lowMaxPackets),
+                   MakeUintegerChecker<uint32_t> ())
+
+    .AddAttribute ("HighPriorityMaxBytes",
+                   "The maximum number of bytes accepted by the high priority queue.",
                    UintegerValue (100 * 65535),
-                   MakeUintegerAccessor (&PriorityQueue::m_maxBytes),
+                   MakeUintegerAccessor (&PriorityQueue::m_highMaxBytes),
+                   MakeUintegerChecker<uint32_t> ())
+
+    .AddAttribute ("LowPriorityMaxBytes",
+                   "The maximum number of bytes accepted by the low priority queue.",
+                   UintegerValue (100 * 65535),
+                   MakeUintegerAccessor (&PriorityQueue::m_lowMaxBytes),
                    MakeUintegerChecker<uint32_t> ())
  ;
 
@@ -50,8 +63,8 @@ PriorityQueue::GetTypeId (void)
 PriorityQueue::PriorityQueue () :
   Queue (),
   m_highPackets (),
-  m_lowPackets (),
   m_bytesInHighQueue (0),
+  m_lowPackets (),
   m_bytesInLowQueue (0)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -137,14 +150,14 @@ PriorityQueue::DoEnqueue (Ptr<Packet> p)
   uint16_t priority = Classify (p);
   if (priority == 1)
     {
-      if (m_mode == QUEUE_MODE_PACKETS && (m_highPackets.size () >= m_maxPackets))
+      if (m_mode == QUEUE_MODE_PACKETS && (m_highPackets.size () >= m_highMaxPackets))
         {
           NS_LOG_LOGIC ("Queue full (at max packets) -- droppping pkt");
           Drop (p);
           return false;
         }
       
-      if (m_mode == QUEUE_MODE_BYTES && (m_bytesInHighQueue + p->GetSize () >= m_maxBytes))
+      if (m_mode == QUEUE_MODE_BYTES && (m_bytesInHighQueue + p->GetSize () >= m_highMaxBytes))
         {
           NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- droppping pkt");
           Drop (p);
@@ -162,14 +175,14 @@ PriorityQueue::DoEnqueue (Ptr<Packet> p)
 
   else if (priority == 0)
     {
-      if (m_mode == QUEUE_MODE_PACKETS && (m_lowPackets.size () >= m_maxPackets))
+      if (m_mode == QUEUE_MODE_PACKETS && (m_lowPackets.size () >= m_lowMaxPackets))
         {
           NS_LOG_LOGIC ("Queue full (at max packets) -- droppping pkt");
           Drop (p);
           return false;
         }
       
-      if (m_mode == QUEUE_MODE_BYTES && (m_bytesInLowQueue + p->GetSize () >= m_maxBytes))
+      if (m_mode == QUEUE_MODE_BYTES && (m_bytesInLowQueue + p->GetSize () >= m_lowMaxBytes))
         {
           NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- droppping pkt");
           Drop (p);
