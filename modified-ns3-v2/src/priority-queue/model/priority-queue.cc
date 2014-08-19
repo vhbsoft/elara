@@ -12,6 +12,7 @@
 
 #include "ns3/ppp-header.h"
 #include "ns3/udp-header.h"
+#include "ns3/tcp-header.h"
 #include "ns3/ipv4-header.h"
 
 NS_LOG_COMPONENT_DEFINE ("PriorityQueue");
@@ -54,6 +55,12 @@ PriorityQueue::GetTypeId (void)
                    "The maximum number of bytes accepted by the low priority queue.",
                    UintegerValue (100 * 65535),
                    MakeUintegerAccessor (&PriorityQueue::m_lowMaxBytes),
+                   MakeUintegerChecker<uint32_t> ())
+
+    .AddAttribute ("HighPriorityPort",
+                   "The destination port number for high priority traffic.",
+                   UintegerValue (3000),
+                   MakeUintegerAccessor (&PriorityQueue::m_priorityPort),
                    MakeUintegerChecker<uint32_t> ())
  ;
 
@@ -104,35 +111,40 @@ PriorityQueue::Classify (Ptr<Packet> p)
   if (protocol == 17)
     {
       UdpHeader udp;
-      p->RemoveHeader (udp);
+      p->PeekHeader (udp);
 
-      if (udp.GetDestinationPort() == 3000)
+      if (udp.GetDestinationPort() == m_priorityPort)
         {
           NS_LOG_INFO ("\tclassifier: high priority udp");
-          //NS_LOG_UNCOND ("\tclassifier: high priority udp " << p->GetUid());
+          //NS_LOG_UNCOND ("\tclassifier: high priority udp");
           priority = 1;
         }
-      else if (udp.GetDestinationPort() == 2000)
+      else
         {
           NS_LOG_INFO ("\tclassifier: low priority udp");
           priority = 0;
         }
-      else
-        {
-          NS_LOG_INFO ("\tclassifier: unrecognized udp");
-          NS_LOG_INFO ("\tclassifier: port=" << udp.GetDestinationPort());
-          priority = 0;
-        }
-      p->AddHeader (udp);
     }
+
   else if (protocol == 6)
     {
-      NS_LOG_INFO ("\tclassifier: tcp");
-      priority = 2;
+      TcpHeader tcp;
+      p->PeekHeader (tcp);
+      if (tcp.GetDestinationPort() == m_priorityPort)
+        {
+          NS_LOG_INFO ("\tclassifier: high priority tcp");
+          //NS_LOG_UNCOND ("\tclassifier: high priority tcp");
+          priority = 1;
+        }
+      else
+        {
+          NS_LOG_INFO ("\tclassifier: low priority tcp");
+          priority = 0;
+        }
     }
   else
     {
-      NS_LOG_INFO ("\tclassifier: unrecognized protocol");
+      NS_LOG_INFO ("\tclassifier: unrecognized transport protocol");
       priority = 0;
     }
 
@@ -148,6 +160,8 @@ PriorityQueue::DoEnqueue (Ptr<Packet> p)
   NS_LOG_FUNCTION (this << p);
 
   uint16_t priority = Classify (p);
+
+  // High Priority
   if (priority == 1)
     {
       if (m_mode == QUEUE_MODE_PACKETS && (m_highPackets.size () >= m_highMaxPackets))
@@ -173,6 +187,7 @@ PriorityQueue::DoEnqueue (Ptr<Packet> p)
       return true; 
     }
 
+  // Low Priority
   else if (priority == 0)
     {
       if (m_mode == QUEUE_MODE_PACKETS && (m_lowPackets.size () >= m_lowMaxPackets))
@@ -198,6 +213,7 @@ PriorityQueue::DoEnqueue (Ptr<Packet> p)
       return true;      
     }
 
+  // This normally never happens unless Classify() has been changed
   else 
     {
       return false;

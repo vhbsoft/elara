@@ -32,6 +32,8 @@ private:
   // returns 1 for high
   uint16_t Classify (Ptr<Packet> p);
 
+  uint32_t m_priorityPort;
+
   std::queue<Ptr<Packet> > m_highPackets;
   uint32_t m_bytesInHighQueue;
   uint32_t m_highMaxPackets;
