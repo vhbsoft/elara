@@ -35,6 +35,8 @@ main (int argc, char *argv[])
   uint32_t packetSize = 1100;
   double interPacketTime = 0.00000001;
 
+  uint32_t priorityPort = 3000;
+
   // Network Settings
   uint32_t ReceiveQueueSizeR2 = 655350000;
   uint32_t highPriorityQueueSize = 655350000;
@@ -75,6 +77,8 @@ main (int argc, char *argv[])
 
   cmd.AddValue ("packetSize", "Size of the packets, bounds are 2 and 1500", packetSize);
   cmd.AddValue ("interPacketTime", "Time inbetween packets in seconds", interPacketTime);
+
+  cmd.AddValue ("priorityPort", "Destination port for high priority traffic", priorityPort);  
 
   cmd.AddValue ("ReceiveQueueSizeR2", "The size of the incoming queue on R2", ReceiveQueueSizeR2);
   cmd.AddValue ("highPriorityQueueSize", "", highPriorityQueueSize);
@@ -155,7 +159,9 @@ main (int argc, char *argv[])
   p2p.SetDeviceAttribute ("DataRate", (StringValue) R1R2DataRate);
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (R1Mtu));
   p2p.SetQueue("ns3::PriorityQueue", "HighPriorityMaxPackets", UintegerValue (highPriorityQueueSize),
-               "LowPriorityMaxPackets", UintegerValue (lowPriorityQueueSize));
+               "LowPriorityMaxPackets", UintegerValue (lowPriorityQueueSize),
+               "HighPriorityPort", UintegerValue (priorityPort));
+  
   NetDeviceContainer R1R2_d = p2p.Install (R1R2);
 
   // Create addresses
@@ -179,6 +185,8 @@ main (int argc, char *argv[])
 
   //Create, configure, and install PriorityQueueReceiver
   PriorityQueueSenderHelper sendHelper;
+  sendHelper.SetAttribute ("RemoteUdpPortHigh", UintegerValue (priorityPort));
+
   sendHelper.SetAttribute ("InitialPacketTrainLength", UintegerValue (initialPacketTrainLength));
   sendHelper.SetAttribute ("SeparationPacketTrainLength", UintegerValue (separationPacketTrainLength));
   sendHelper.SetAttribute ("NumAptPriorityProbes", UintegerValue (numAptPriorityProbes));
@@ -188,15 +196,15 @@ main (int argc, char *argv[])
   sendHelper.SetAttribute ("PacketSize", UintegerValue (packetSize));
   sendHelper.SetAttribute ("RemoteAddress", AddressValue (R2R_i.GetAddress(1)));
 
-  ApplicationContainer sender;
-  sender = sendHelper.Install (S.Get (0));
-
+  ApplicationContainer sender = sendHelper.Install (S.Get (0));
   sendHelper.GetSender()->SetLogFileName (outputFile);
   sender.Start (Seconds (startTime));
   sender.Stop (Seconds (endTime-1));
 
   // Create, configure, and install PriorityQueueReceiver
   PriorityQueueReceiverHelper recvHelper;
+  recvHelper.SetAttribute ("UdpPortHigh", UintegerValue (priorityPort));
+
   ApplicationContainer receiver = recvHelper.Install (R.Get (0));
   recvHelper.GetReceiver()->SetLogFileName (outputFile);
   receiver.Start (Seconds (startTime));

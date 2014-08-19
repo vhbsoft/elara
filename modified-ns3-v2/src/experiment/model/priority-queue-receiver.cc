@@ -101,7 +101,7 @@ PriorityQueueReceiver::StartApplication (void)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
       m_udpSocketHigh = Socket::CreateSocket (GetNode (), tid);
-      InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), 3000);
+      InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), m_udpPortHigh);
       m_udpSocketHigh->Bind (local);
     }
 
@@ -112,7 +112,7 @@ PriorityQueueReceiver::StartApplication (void)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
       m_udpSocketLow = Socket::CreateSocket (GetNode (), tid);
-      InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), 2000);
+      InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), m_udpPortLow);
       m_udpSocketLow->Bind (local);
     }
 
