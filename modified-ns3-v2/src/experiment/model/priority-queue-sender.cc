@@ -70,17 +70,17 @@ PriorityQueueSender::GetTypeId (void)
                    AddressValue (),
                    MakeAddressAccessor (&PriorityQueueSender::m_peerAddress),
                    MakeAddressChecker ())
-    .AddAttribute ("RemoteUdpPortHigh", "The destination port of the outbound high prope packets",
-                   UintegerValue (),
-                   MakeUintegerAccessor (&PriorityQueueSender::m_peerUdpPortHigh),
-                   MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("RemoteUdpPortLow", "The destination port of the outbound low priority probe packets",
-                   UintegerValue (),
-                   MakeUintegerAccessor (&PriorityQueueSender::m_peerUdpPortLow),
-                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("RemoteTcpPort", "The destination port of the outbound TCP connections",
                    UintegerValue (10),
                    MakeUintegerAccessor (&PriorityQueueSender::m_peerTcpPort),
+                   MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("RemoteUdpPortHigh", "The destination port of the outbound high prope packets",
+                   UintegerValue (3000),
+                   MakeUintegerAccessor (&PriorityQueueSender::m_peerUdpPortHigh),
+                   MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("RemoteUdpPortLow", "The destination port of the outbound low priority probe packets",
+                   UintegerValue (2000),
+                   MakeUintegerAccessor (&PriorityQueueSender::m_peerUdpPortLow),
                    MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
@@ -99,8 +99,6 @@ PriorityQueueSender::PriorityQueueSender ()
   m_udpSocketHigh = 0;
   m_udpSocketLow = 0;
   m_tcpSocket = 0;
-  m_peerUdpPortHigh = 3000;
-  m_peerUdpPortLow = 2000;
   m_mode = 0;
   m_nextEvent = EventId ();
 }
@@ -112,11 +110,10 @@ PriorityQueueSender::~PriorityQueueSender ()
 
 
 void
-PriorityQueueSender::SetRemote (Ipv4Address ip, uint16_t udpPort, uint16_t tcpPort)
+PriorityQueueSender::SetRemote (Ipv4Address ip, uint16_t udpPort,uint16_t tcpPort)
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_peerAddress = Address(ip);
-  //m_peerUdpPort = udpPort;
   m_peerTcpPort = tcpPort;
 }
 
@@ -125,7 +122,6 @@ PriorityQueueSender::SetRemote (Address ip, uint16_t udpPort, uint16_t tcpPort)
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_peerAddress = ip;
-  //m_peerUdpPort = udpPort;
   m_peerTcpPort = tcpPort;
 }
 
@@ -218,7 +214,7 @@ PriorityQueueSender::StartApplication (void)
       if (Ipv4Address::IsMatchingType(m_peerAddress) == true)
         {
           m_udpSocketHigh->Bind ();
-          m_udpSocketHigh->Connect (InetSocketAddress (Ipv4Address::ConvertFrom(m_peerAddress), 3000));
+          m_udpSocketHigh->Connect (InetSocketAddress (Ipv4Address::ConvertFrom(m_peerAddress), m_peerUdpPortHigh));
         }
     }
 
@@ -233,7 +229,7 @@ PriorityQueueSender::StartApplication (void)
       if (Ipv4Address::IsMatchingType(m_peerAddress) == true)
         {
           m_udpSocketLow->Bind ();
-          m_udpSocketLow->Connect (InetSocketAddress (Ipv4Address::ConvertFrom(m_peerAddress), 2000));
+          m_udpSocketLow->Connect (InetSocketAddress (Ipv4Address::ConvertFrom(m_peerAddress), m_peerUdpPortLow));
         }
     }
 
