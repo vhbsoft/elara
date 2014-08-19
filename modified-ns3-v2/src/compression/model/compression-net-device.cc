@@ -676,7 +676,7 @@ CompressionNetDevice::CompressPacket (Ptr<Packet> p)
   NS_LOG_FUNCTION_NOARGS ();
   uint32_t srcSize = p->GetSize();
 
-  if (srcSize < MAX_PACKET_SIZE)
+  if (srcSize > MAX_PACKET_SIZE)
     {
       NS_LOG_UNCOND ("Packet is too large for compression!\nMAX_PACKET_SIZE = " << MAX_PACKET_SIZE 
                      << "\npacket size = " << srcSize 
@@ -684,6 +684,7 @@ CompressionNetDevice::CompressPacket (Ptr<Packet> p)
     }
 
   NS_LOG_INFO ("Received " << srcSize << " bytes for compression UID: " << p->GetUid());
+  NS_LOG_UNCOND ("Received " << srcSize << " bytes for compression UID: " << p->GetUid());
 
   CompressionHeader compHead;
   compHead.SetSize(srcSize);
@@ -697,9 +698,10 @@ CompressionNetDevice::CompressPacket (Ptr<Packet> p)
 
   compHead.SetData (destData, destSize);
   p->AddHeader (compHead);
+
   NS_LOG_INFO("Compressed data to " << destSize << " bytes");
-  free (srcData);
-  free (destData);
+  NS_LOG_UNCOND("Compressed data to " << destSize << " bytes");
+
   return;
 }
 
@@ -709,7 +711,7 @@ CompressionNetDevice::DecompressPacket (Ptr<Packet> p)
   NS_LOG_FUNCTION_NOARGS ();
   uint32_t srcSize = p->GetSize();
 
-  if (srcSize < MAX_PACKET_SIZE)
+  if (srcSize > MAX_PACKET_SIZE)
     {
       NS_LOG_UNCOND ("Packet is too large for decompression!\nMAX_PACKET_SIZE = " << MAX_PACKET_SIZE 
                      << "\npacket size = " << srcSize 
@@ -717,6 +719,7 @@ CompressionNetDevice::DecompressPacket (Ptr<Packet> p)
     }
 
   NS_LOG_INFO ("Received " << srcSize << " bytes for decompression UID: " << p->GetUid());
+  NS_LOG_UNCOND ("Received " << srcSize << " bytes for decompression UID: " << p->GetUid());
 
   CompressionHeader compHead;
   compHead.SetSize (srcSize);
@@ -730,9 +733,10 @@ CompressionNetDevice::DecompressPacket (Ptr<Packet> p)
 
   compHead.SetData (destData, destSize);
   p->AddHeader (compHead);
+
   NS_LOG_INFO ("Decompressed data to " << destSize << " bytes");
-  free (srcData);
-  free (destData);
+  NS_LOG_UNCOND ("Decompressed data to " << destSize << " bytes");
+
   return;
 }
 
