@@ -26,7 +26,7 @@ FromDevice(eth0, PROMISC true)->
 
 	udpdecomp[1]->Unstrip(14)->Print ("decompression failed!", CONTENTS 'NONE')->Discard;
 	udpdecomp[0]->Unstrip(14)->
-	        //Print("decompress udp", CONTENTS 'NONE')->
+		Print("decompress udp", CONTENTS 'NONE')->
 		out;
 
 	tcpdecomp[1]->Unstrip(14)->Print ("decompression failed!", CONTENTS 'NONE')->Discard;
