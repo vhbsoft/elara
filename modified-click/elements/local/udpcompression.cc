@@ -1,5 +1,5 @@
 #include <click/config.h>
-#include "tcpcompression.hh"
+#include "udpcompression.hh"
 #include <clicknet/udp.h>
 CLICK_DECLS
 
@@ -21,7 +21,7 @@ UdpCompression::push(int, Packet *p_in)
   uint16_t uncomp_size = p_out->length()-p_out->transport_header_offset()-8;
   uint16_t comp_size = MAX_PACKET_SIZE;
 
-  //struct click_tcp* udp = (struct click_udp*) p_out->transport_header();
+  //struct click_udp* udp = (struct click_udp*) p_out->transport_header();
 
   if (ZlibCompression (start, m_buf, uncomp_size, comp_size))
     {
