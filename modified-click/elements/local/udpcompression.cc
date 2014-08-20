@@ -1,27 +1,27 @@
 #include <click/config.h>
 #include "tcpcompression.hh"
-//#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 CLICK_DECLS
 
-TcpCompression::TcpCompression()
+UdpCompression::UdpCompression()
 {
 };
 
-TcpCompression::~TcpCompression()
+UdpCompression::~UdpCompression()
 {
 };
 
 void
-TcpCompression::push(int, Packet *p_in)
+UdpCompression::push(int, Packet *p_in)
 {
 
   WritablePacket* p_out = p_in->uniqueify();
 
-  uint8_t* start = (uint8_t*) p_out->tcp_header()+20;
-  uint16_t uncomp_size = p_out->length()-p_out->transport_header_offset()-20;
+  uint8_t* start = (uint8_t*) p_out->udp_header()+8;
+  uint16_t uncomp_size = p_out->length()-p_out->transport_header_offset()-8;
   uint16_t comp_size = MAX_PACKET_SIZE;
 
-  //struct click_tcp* tcp = (struct click_tcp*) p_out->tcp_header();
+  //struct click_tcp* udp = (struct click_udp*) p_out->transport_header();
 
   if (ZlibCompression (start, m_buf, uncomp_size, comp_size))
     {
@@ -30,21 +30,21 @@ TcpCompression::push(int, Packet *p_in)
       else
         p_out = p_out->put(comp_size - uncomp_size);
 
-      memcpy((uint8_t*) p_out->tcp_header()+20, m_buf, comp_size);
+      memcpy((uint8_t*) p_out->udp_header()+8, m_buf, comp_size);
 
       // Update the ip_len parameter of the ip header
       if (p_out->has_network_header())
 	{
 	  struct click_ip* ip = (struct click_ip*) p_out->ip_header();
-	  ip->ip_len = htons(comp_size+40);
-	}	  
+	  ip->ip_len = htons(comp_size+28);
+	}
       output(0).push(p_out);
     }
   else output(1).push(p_out);
 }
 
 bool
-TcpCompression::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize)
+UdpCompression::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize)
 {  
   z_stream strm;
   strm.zalloc = 0;
@@ -84,6 +84,6 @@ TcpCompression::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t s
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(TcpCompression)
+EXPORT_ELEMENT(UdpCompression)
 ELEMENT_LIBS(-L/usr/local/lib -lz)
-ELEMENT_MT_SAFE(TcpCompression)
+ELEMENT_MT_SAFE(UdpCompression)
