@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <zlib.h>
 
-#define MAX_PACKET_SIZE 10000
+#define MAX_PACKET_SIZE 32768
 
 CLICK_DECLS
 class Decompression : public Element
