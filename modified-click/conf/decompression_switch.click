@@ -18,20 +18,19 @@ FromDevice(eth0, PROMISC true)->
 	cip[0]->ipclass;
 	cip[1]->Unstrip(14)->out;
 
-	// Remove IP and UDP/TCP header
-	ipclass[0]->Strip(20)->Strip(8)->udpdecomp :: Decompression;
-	ipclass[1]->Strip(20)->Strip(20)->tcpdecomp :: Decompression;
+	ipclass[0]->udpdecomp :: UdpDecompression;
+	ipclass[1]->tcpdecomp :: TcpDecompression;
 	ipclass[2]->Unstrip(14)->
 	        Print("do not decompress", CONTENTS 'NONE')->
 		out;
 
-	udpdecomp[1]->Unstrip(8)->Unstrip(20)->Unstrip(14)->out;
-	udpdecomp[0]->Unstrip(8)->Unstrip(20)->Unstrip(14)->
-	        //Print("decompress udp", CONTENTS 'NONE')->
+	udpdecomp[1]->Unstrip(14)->Print ("decompression failed!", CONTENTS 'NONE')->Discard;
+	udpdecomp[0]->Unstrip(14)->
+		Print("decompress udp", CONTENTS 'NONE')->
 		out;
 
-	tcpdecomp[1]->Unstrip(20)->Unstrip(20)->Unstrip(14)->out;
-	tcpdecomp[0]->Unstrip(20)->Unstrip(20)->Unstrip(14)->
+	tcpdecomp[1]->Unstrip(14)->Print ("decompression failed!", CONTENTS 'NONE')->Discard;
+	tcpdecomp[0]->Unstrip(14)->
 	        Print("decompress tcp", CONTENTS 'NONE')->
 		out;
 

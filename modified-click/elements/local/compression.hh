@@ -2,7 +2,7 @@
 #define CLICK_COMPRESSION_HH
 #include <click/element.hh>
 
-#define MAX_PACKET_SIZE 10000
+#define MAX_PACKET_SIZE 32768
 
 CLICK_DECLS
 class Compression : public Element

@@ -1,27 +1,27 @@
 #include <click/config.h>
-#include "tcpdecompression.hh"
-//#include <clicknet/tcp.h>
+#include "udpdecompression.hh"
+//#include <clicknet/udp.h>
 CLICK_DECLS
 
-TcpDecompression::TcpDecompression()
+UdpDecompression::UdpDecompression()
 {
 };
 
-TcpDecompression::~TcpDecompression()
+UdpDecompression::~UdpDecompression()
 {
 };
 
 void
-TcpDecompression::push(int, Packet *p_in)
+UdpDecompression::push(int, Packet *p_in)
 {
 
   WritablePacket* p_out = p_in->uniqueify();
 
-  uint8_t* start = (uint8_t*) p_out->tcp_header()+20;
-  uint16_t comp_size = p_out->length()-p_out->transport_header_offset()-20;
+  uint8_t* start = (uint8_t*) p_out->udp_header()+8;
+  uint16_t comp_size = p_out->length()-p_out->transport_header_offset()-8;
   uint16_t uncomp_size = MAX_PACKET_SIZE;
 
-  //struct click_tcp* tcp = (struct click_tcp*) p_out->tcp_header();
+  //struct click_udp* udp = (struct click_udp*) p_out->udp_header();
 
   if (ZlibDecompression (start, buf, comp_size, uncomp_size))
     {
@@ -30,12 +30,12 @@ TcpDecompression::push(int, Packet *p_in)
       else
         p_out->take(comp_size - uncomp_size);
 
-      memcpy((uint8_t*) p_out->tcp_header()+20, buf, uncomp_size);
+      memcpy((uint8_t*) p_out->udp_header()+8, buf, uncomp_size);
 
       if (p_out->has_network_header())
 	{
 	  struct click_ip* ip = (struct click_ip*) p_out->ip_header();
-	  ip->ip_len = htons(uncomp_size+40);
+	  ip->ip_len = htons(uncomp_size+28);
 	}
       output(0).push(p_out);
     }
@@ -43,7 +43,7 @@ TcpDecompression::push(int, Packet *p_in)
 }
 
 bool
-TcpDecompression::ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize)
+UdpDecompression::ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize)
 {
   z_stream strm;
   strm.zalloc = 0;
@@ -70,6 +70,6 @@ TcpDecompression::ZlibDecompression (uint8_t *srcData, uint8_t *destData, uint16
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(TcpDecompression)
+EXPORT_ELEMENT(UdpDecompression)
 ELEMENT_LIBS(-L/usr/local/lib -lz)
-ELEMENT_MT_SAFE(TcpDecompression)
+ELEMENT_MT_SAFE(UdpDecompression)
