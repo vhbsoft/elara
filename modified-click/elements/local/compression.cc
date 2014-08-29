@@ -1,3 +1,5 @@
+#include <zlib.h>
+
 #include <click/config.h>
 #include "compression.hh"
 CLICK_DECLS
@@ -20,7 +22,7 @@ Compression::push(int, Packet *p_in)
   uint16_t uncomp_size = p_out->length();
   uint16_t comp_size = MAX_PACKET_SIZE;
 
-  if (ZlibCompression (start, m_buf, uncomp_size, comp_size))
+  if (ZlibCompression (start, m_buf, uncomp_size, comp_size) == 1)
     {
       if (uncomp_size > comp_size)
         p_out->take(uncomp_size - comp_size);
@@ -34,9 +36,10 @@ Compression::push(int, Packet *p_in)
   else output(1).push(p_out);
 }
 
-bool
+uint32_t
 Compression::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize)
-{  
+{
+
   z_stream strm;
   strm.zalloc = 0;
   strm.zfree = 0;
@@ -53,7 +56,7 @@ Compression::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcS
       if (res != Z_OK)
 	{
 	  deflateEnd(&strm);
-	  return false;
+	  return -1;
 	}
     }
   
@@ -65,13 +68,13 @@ Compression::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcS
   if (deflate_res != Z_STREAM_END)
     {
       deflateEnd(&strm);
-      return false;
+      return -1;
     }
   
   destSize = strm.total_out;
   deflateEnd(&strm);
 
-  return true;
+  return 1;
 }
 
 CLICK_ENDDECLS

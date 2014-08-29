@@ -1,7 +1,6 @@
 #ifndef CLICK_COMPRESSION_HH
 #define CLICK_COMPRESSION_HH
 #include <click/element.hh>
-#include <zlib.h>
 
 #define MAX_PACKET_SIZE 10000
 
@@ -18,10 +17,11 @@ public:
 
   void push(int, Packet *);
 
-  bool ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize);
+  uint32_t ZlibCompression (uint8_t *srcData, uint8_t *destData, uint16_t srcSize, uint16_t &destSize);
 
 private:
   uint8_t m_buf[MAX_PACKET_SIZE];
 };
+
 CLICK_ENDDECLS
 #endif
