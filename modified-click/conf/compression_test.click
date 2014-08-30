@@ -1,50 +1,55 @@
 // compression_test.click
 // test compression/decompression element functionality
 
+ipclass1 :: IPClassifier(src tcp port 80, -);
+ipclass2 :: IPClassifier(src tcp port 80, -);
+
 FromDevice(eth0, PROMISC true)->
+	//Print("New packet")->
 	//Print("\nNew packet\n", -1)->
-	Print("New packet")->
 	class1 :: Classifier(12/0800, -);
 class1[0]->
 	Strip(14)->
+		//Print("Strip ethernet")->
 		//Print("Strip ethernet\n", -1)->
-		Print("Strip ethernet")->
-		MarkIPHeader()->ipclass1 :: IPClassifier(tcp, -);
+		MarkIPHeader()->ipclass1;
 
 ipclass1[0]->
+	//IPPrint("IPPrint")->
 	Strip(40)->
-		Print("Strip IP/TCP\n", -1)->
-		//Print("Strip IP/TCP")->
+		Print("Strip IP/TCP")->
+		//Print("Strip IP/TCP\n", -1)->
 		tcpcomp :: Compression;
 tcpcomp[0]->
-	Print("Compress\n", -1)->
-	//Print("Compress")->
+	Print("Compress")->
+	//Print("Compress\n", -1)->
 	Unstrip(40)->
+		//Print("Unstrip IP/TCP")->
 		//Print("Unstrip IP/TCP\n", -1)->
-		Print("Unstrip IP/TCP")->
 		Unstrip(14)->
+			//Print("Unstrip ethernet")->
 			//Print("Unstrip ethernet\n", -1)->
-			Print("Unstrip ethernet")->
 			class2 :: Classifier(12/0800, -);
 class2[0]->
 	Strip(14)->
+		//Print("Strip ethernet")->
 		//Print("Strip ethernet\n", -1)->
-		Print("Strip ethernet")->
-		MarkIPHeader()->ipclass2 :: IPClassifier(tcp, -);
+		MarkIPHeader()->ipclass2;
 ipclass2[0]->
+	//IPPrint("IPPrint")->
 	Strip(40)->
-		Print("Strip IP/TCP\n", -1)->
-		//Print("Strip IP/TCP")->
+		Print("Strip IP/TCP")->
+		//Print("Strip IP/TCP\n", -1)->
 		tcpdecomp :: Decompression;
 tcpdecomp[0]->
-	Print("Decompress\n", -1)->
-	//Print("Decompress")->
+	Print("Decompress")->
+	//Print("Decompress\n", -1)->
 	Unstrip(40)->
+		//Print("Unstrip IP/TCP")->
 		//Print("Unstrip IP/TCP\n", -1)->
-		Print("Unstrip IP/TCP")->
 		Unstrip(14)->
+			//Print("Unstrip ethernet")->
 			//Print("Unstrip ethernet\n", -1)->
-			Print("Unstrip ethernet")->
 			Print("Discard", 0)->
 			Discard;
 
