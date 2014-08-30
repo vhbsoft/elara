@@ -1,7 +1,7 @@
 // simple_decomp.click
 // simple decompression switch
 
-ipclass :: IPClassifier(dst udp port 0000, dst tcp port 0000, -);
+ipclass :: IPClassifier(dst udp port 0, dst tcp port 0, -);
 
 out :: Queue(10000000)->
         //Print("->eth1", CONTENTS 'NONE')->
@@ -12,11 +12,8 @@ FromDevice(eth0, PROMISC true)->
 	class :: Classifier(12/0800, -);
 
 	// Remove Ethernet header
-	class[0]->Strip(14)->cip :: CheckIPHeader(CHECKSUM false);
+	class[0]->Strip(14)->MarkIPHeader()->ipclass;
 	class[1]->out;
-
-	cip[0]->ipclass;
-	cip[1]->Unstrip(14)->out;
 
 	ipclass[0]->udpdecomp :: UdpDecompression;
 	ipclass[1]->tcpdecomp :: TcpDecompression;

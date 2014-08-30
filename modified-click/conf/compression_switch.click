@@ -12,11 +12,8 @@ FromDevice(eth0, PROMISC true)->
 	class :: Classifier(12/0800, -);
 
 	// Remove Ethernet header
-	class[0]->Strip(14)->cip :: CheckIPHeader(CHECKSUM false);
+	class[0]->Strip(14)->MarkIPHeader()->ipclass;
 	class[1]->out;
-
-	cip[0]->ipclass;
-	cip[1]->Unstrip(14)->out;
 
 	ipclass[0]->udpcomp :: UdpCompression;
 	ipclass[1]->tcpcomp :: TcpCompression;
