@@ -5,6 +5,9 @@
 
 #define MAX_PACKET_SIZE 10000
 
+//
+// This element takes an IP packet and decompresses everything after the tcp header
+//
 CLICK_DECLS
 class TcpDecompression : public Element
 {

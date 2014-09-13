@@ -5,6 +5,9 @@
 
 #define MAX_PACKET_SIZE 10000
 
+//
+// This element takes an IP packet and compresses everything after the tcp header
+//
 CLICK_DECLS
 class TcpCompression : public Element
 {

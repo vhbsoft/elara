@@ -4,6 +4,9 @@
 
 #define MAX_PACKET_SIZE 32768
 
+//
+// This element takes a packet and decompresses its entire contents
+//
 CLICK_DECLS
 class Decompression : public Element
 {

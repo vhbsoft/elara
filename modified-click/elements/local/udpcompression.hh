@@ -5,6 +5,9 @@
 
 #define MAX_PACKET_SIZE 10000
 
+//
+// This element takes an IP packet and compresses everything after the udp header
+//
 CLICK_DECLS
 class UdpCompression : public Element
 {
