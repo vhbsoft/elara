@@ -16,7 +16,7 @@ class1[0]->
 
 ipclass1[0]->
 	//IPPrint("IPPrint")->
-		tcpcomp :: TcpCompression;
+		tcpcomp :: Compression;
 tcpcomp[0]->
 	Print("Compress")->
 	//Print("Compress\n", -1)->
@@ -31,7 +31,7 @@ class2[0]->
 		MarkIPHeader()->ipclass2;
 ipclass2[0]->
 	//IPPrint("IPPrint")->
-		tcpdecomp :: TcpDecompression;
+		tcpdecomp :: Decompression;
 tcpdecomp[0]->
 	Print("Decompress")->
 	//Print("Decompress\n", -1)->
