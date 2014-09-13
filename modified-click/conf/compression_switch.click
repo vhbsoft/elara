@@ -1,5 +1,5 @@
-// simple_comp.click
-// simple compression switch
+// compression_switch.click
+// Compresses everything after the transport headers for the specified destination ports 
 
 ipclass :: IPClassifier(dst udp port 0, dst tcp port 0, -);
 

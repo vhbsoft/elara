@@ -1,5 +1,5 @@
-// simple_decomp.click
-// simple decompression switch
+// decompression_switch.click
+// decompresses everything after the transport header for specified destination ports
 
 ipclass :: IPClassifier(dst udp port 0, dst tcp port 0, -);
 
