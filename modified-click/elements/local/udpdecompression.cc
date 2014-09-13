@@ -32,6 +32,7 @@ UdpDecompression::push(int, Packet *p_in)
 
       memcpy((uint8_t*) p_out->udp_header()+8, buf, uncomp_size);
 
+      // Udpate the ip_len parameter of the ip header
       if (p_out->has_network_header())
 	{
 	  struct click_ip* ip = (struct click_ip*) p_out->ip_header();

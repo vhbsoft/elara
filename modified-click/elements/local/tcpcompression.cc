@@ -37,7 +37,7 @@ TcpCompression::push(int, Packet *p_in)
 	{
 	  struct click_ip* ip = (struct click_ip*) p_out->ip_header();
 	  ip->ip_len = htons(comp_size+40);
-	}	  
+	}
       output(0).push(p_out);
     }
   else output(1).push(p_out);
