@@ -2,8 +2,8 @@
 
 #include <click/config.h>
 #include "compression.hh"
-CLICK_DECLS
 
+CLICK_DECLS
 Compression::Compression()
 {
 };
@@ -22,7 +22,7 @@ Compression::push(int, Packet *p_in)
   uint16_t uncomp_size = p_out->length();
   uint16_t comp_size = MAX_PACKET_SIZE;
 
-  if (ZlibCompression (start, m_buf, uncomp_size, comp_size) == 1)
+  if (ZlibCompression (start, m_buf, uncomp_size, comp_size))
     {
       if (uncomp_size > comp_size)
         p_out->take(uncomp_size - comp_size);

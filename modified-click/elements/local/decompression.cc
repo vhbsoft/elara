@@ -2,8 +2,8 @@
 
 #include <click/config.h>
 #include "decompression.hh"
-CLICK_DECLS
 
+CLICK_DECLS
 Decompression::Decompression()
 {
 };
@@ -22,7 +22,7 @@ Decompression::push(int, Packet *p_in)
   uint16_t comp_size = p_out->length();
   uint16_t uncomp_size = MAX_PACKET_SIZE;
 
-  if (ZlibDecompression (start, m_buf, comp_size, uncomp_size) == 1)
+  if (ZlibDecompression (start, m_buf, comp_size, uncomp_size))
     {
       if (uncomp_size > comp_size)
         p_out = p_out->put(uncomp_size - comp_size);
