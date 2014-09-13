@@ -1,7 +1,7 @@
 // simple_comp.click
 // simple compression switch
 
-ipclass :: IPClassifier(dst udp port 0000, dst tcp port 0000, -);
+ipclass :: IPClassifier(dst udp port 0, dst tcp port 0, -);
 
 out :: Queue(10000000)->BandwidthShaper(1000000)->
         //Print("->eth1", CONTENTS 'NONE')->
@@ -21,12 +21,12 @@ FromDevice(eth0, PROMISC true)->
 		Print("do not compress", CONTENTS 'NONE')->
 		out;
 
-	udpcomp[1]->Unstrip(14)->Print ("compression failed!", CONTENTS 'NONE')->Discard;
+	udpcomp[1]->Unstrip(14)->Print ("udp compression failed!", CONTENTS 'NONE')->Discard;
 	udpcomp[0]->Unstrip(14)->
 		Print("compress udp", CONTENTS 'NONE')->
 	        out;
 
-	tcpcomp[1]->Unstrip(14)->Print ("compression failed!", CONTENTS 'NONE')->Discard;
+	tcpcomp[1]->Unstrip(14)->Print ("tcp compression failed!", CONTENTS 'NONE')->Discard;
 	tcpcomp[0]->Unstrip(14)->
 		Print("compress tcp", CONTENTS 'NONE')->
 	        out;
