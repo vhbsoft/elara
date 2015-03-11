@@ -750,7 +750,12 @@ CompressionNetDevice::ZlibCompression (uint8_t *srcData, uint8_t *destData, uint
   strm.avail_in = srcSize;
   strm.next_out = destData;
   strm.avail_out = destSize;
-  deflateInit(&strm, Z_BEST_COMPRESSION);
+  deflateInit2(&strm,
+               Z_BEST_COMPRESSION,
+               Z_DEFLATED,
+               15,
+               8,
+               Z_FIXED);
   while (strm.avail_in != 0)
     {
       int res = deflate(&strm, Z_NO_FLUSH);
@@ -782,7 +787,7 @@ CompressionNetDevice::ZlibDecompression (uint8_t *srcData, uint8_t *destData, ui
   strm.avail_in = srcSize;
   strm.next_out = destData;
   strm.avail_out = destSize;
-  inflateInit(&strm);
+  inflateInit2(&strm, 15);
   int inflate_res = inflate(&strm, Z_FINISH);
   if (strm.avail_out == 0)
     {
