@@ -16,10 +16,10 @@
 
 // Network topology
 //       S1 ------|        |-------R1
-//		          |        |
-//			      N1 ---- N2
-//			      |        |
-//		 S2-------|        |-------R2
+//                |        |
+//                N1 ---- N2
+//                |        |
+//       S2-------|        |-------R2
 //
 // - Flow from S1 to R1 and S2 to R2 using FTP (BulkSendApplication).
 // - WFQ implemented on N1
