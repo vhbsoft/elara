@@ -15,6 +15,10 @@
 #include "ns3/tcp-header.h"
 #include "ns3/ipv4-header.h"
 
+#include <algorithm>
+
+#include <float.h>
+
 NS_LOG_COMPONENT_DEFINE("WeightedFairQueue");
 
 namespace ns3 {
@@ -36,25 +40,25 @@ TypeId WeightedFairQueue::GetTypeId(void) {
 			.AddAttribute("SecondWeightedQueueMaxPackets",
 					"The maximum number of packets accepted by the second weighted queue.",
 					UintegerValue(100),
-					MakeUintegerAccessor(&WeightedFairQueue::m_secondMaxPackets),
+					MakeUintegerAccessor(&WeightedFairQueue::m_inputSecondMaxPackets),
 					MakeUintegerChecker<uint32_t>())
 
 			.AddAttribute("FirstWeightedQueueMaxPackets",
 					"The maximum number of packets accepted by the first weighted queue.",
 					UintegerValue(100),
-					MakeUintegerAccessor(&WeightedFairQueue::m_firstMaxPackets),
+					MakeUintegerAccessor(&WeightedFairQueue::m_inputFirstMaxPackets),
 					MakeUintegerChecker<uint32_t>())
 
 			.AddAttribute("SecondWeightedQueueMaxBytes",
 					"The maximum number of bytes accepted by the second weighted queue.",
 					UintegerValue(100 * 65535),
-					MakeUintegerAccessor(&WeightedFairQueue::m_secondMaxBytes),
+					MakeUintegerAccessor(&WeightedFairQueue::m_inputSecondMaxBytes),
 					MakeUintegerChecker<uint32_t>())
 
 			.AddAttribute("FirstWeightedQueueMaxBytes",
 					"The maximum number of bytes accepted by the first weighted queue.",
 					UintegerValue(100 * 65535),
-					MakeUintegerAccessor(&WeightedFairQueue::m_firstMaxBytes),
+					MakeUintegerAccessor(&WeightedFairQueue::m_inputFirstMaxBytes),
 					MakeUintegerChecker<uint32_t>())
 
 			.AddAttribute("SecondQueuePort",
@@ -66,35 +70,41 @@ TypeId WeightedFairQueue::GetTypeId(void) {
 	        .AddAttribute("FirstWeight",
 	        		"The first queue's weight",
 					DoubleValue(0),
-					MakeDoubleAccessor(&WeightedFairQueue::m_firstWeight),
+					MakeDoubleAccessor(&WeightedFairQueue::m_inputFirstWeight),
 					MakeDoubleChecker<double_t>())
 
 			.AddAttribute("SecondWeight",
 					"The second queue's weight",
 					DoubleValue(0),
-					MakeDoubleAccessor(&WeightedFairQueue::m_secondWeight),
+					MakeDoubleAccessor(&WeightedFairQueue::m_inputSecondWeight),
 					MakeDoubleChecker<double_t>())
 
 			.AddAttribute("TotalExpectedBytes",
 					"Total expected bytes passed before end of simulation - used for showing progression percentage",
 					UintegerValue(0),
 					MakeUintegerAccessor(&WeightedFairQueue::m_totalExpectedBytes),
-					MakeUintegerChecker<uint64_t>());
+					MakeUintegerChecker<uint64_t>())
+
+			.AddAttribute("LinkCapacity",
+					"Link Capacity",
+					DoubleValue(0),
+					MakeDoubleAccessor(&WeightedFairQueue::m_linkCapacity),
+					MakeDoubleChecker<double_t>());
 
 	return tid;
 }
 
 WeightedFairQueue::WeightedFairQueue() :
-		Queue(), m_virtualTime(0.0), m_firstWeightedQueue(), m_bytesInFirstQueue(0), m_secondWeightedQueue(), m_bytesInSecondQueue(0)
-			   , m_finishTimeCollection() {
+		Queue(), m_virtualTime(0.0), v_chk(0), t_chk(0) {
 	NS_LOG_FUNCTION_NOARGS ();
 
+
+	// temporary
 	m_passedBytes = 0;
 	m_20PercentCompleted = false;
 	m_40PercentCompleted = false;
 	m_60PercentCompleted = false;
 	m_80PercentCompleted = false;
-
 	max_firstQueue = 0;
 	max_secondQueue = 0;
 }
@@ -120,7 +130,7 @@ uint16_t WeightedFairQueue::Classify(Ptr<Packet> p) {
 	Ipv4Header ip;
 	p->RemoveHeader(ip);
 
-	uint16_t weightedQueue;
+	uint16_t classIndex;
 
 	uint32_t protocol = ip.GetProtocol();
 	if (protocol == 17) {
@@ -129,10 +139,10 @@ uint16_t WeightedFairQueue::Classify(Ptr<Packet> p) {
 
 		if (udp.GetDestinationPort() == m_secondQueuePort) {
 			NS_LOG_INFO("\tclassifier: second queue udp");
-			weightedQueue = 1;
+			classIndex = 1;
 		} else {
 			NS_LOG_INFO("\tclassifier: first queue udp");
-			weightedQueue = 0;
+			classIndex = 0;
 		}
 	}
 
@@ -141,15 +151,15 @@ uint16_t WeightedFairQueue::Classify(Ptr<Packet> p) {
 		p->PeekHeader(tcp);
 		if (tcp.GetDestinationPort() == m_secondQueuePort) {
 			NS_LOG_INFO("\tclassifier: second queue tcp");
-			weightedQueue = 1;
+			classIndex = 1;
 		} else {
 			NS_LOG_INFO("\tclassifier: first queue tcp");
-			weightedQueue = 0;
+			classIndex = 0;
 		}
 
 	} else {
 		NS_LOG_INFO("\tclassifier: unrecognized transport protocol");
-		weightedQueue = 0;
+		classIndex = 0;
 	}
 
 	p->AddHeader(ip);
@@ -158,14 +168,12 @@ uint16_t WeightedFairQueue::Classify(Ptr<Packet> p) {
 
 	//*************************************
 	// this is temporary, used for showing progression, should be removed later
-	if (weightedQueue == 1)
+	if (classIndex == 1)
 	{
 		m_passedBytes = m_passedBytes + p->GetSize() - 54;
 		if (m_passedBytes > m_totalExpectedBytes/5 and m_20PercentCompleted == false) {
 			std::cout << "20 percent" << std::endl;
 			m_20PercentCompleted = true;
-			//std::cout << "Max first queue used: " << max_firstQueue << std::endl;
-			//std::cout << "Max second queue used: " << max_secondQueue << std::endl;
 		}
 		else if (m_passedBytes > (2*m_totalExpectedBytes/5) and m_40PercentCompleted == false) {
 			std::cout << "40 percent" << std::endl;
@@ -178,238 +186,232 @@ uint16_t WeightedFairQueue::Classify(Ptr<Packet> p) {
 		else if (m_passedBytes > (4*m_totalExpectedBytes/5) and m_80PercentCompleted == false) {
 			std::cout << "80 percent" << std::endl;
 			m_80PercentCompleted = true;
-			//std::cout << "Max first queue used: " << max_firstQueue << std::endl;
-			//std::cout << "Max second queue used: " << max_secondQueue << std::endl;
 		}
 	}
 	//*************************************
 
-	return weightedQueue;
+	return classIndex;
 }
 
 bool WeightedFairQueue::DoEnqueue(Ptr<Packet> p) {
 	NS_LOG_FUNCTION(this << p);
-	double_t currentFinishTime, currentStartTime;
+	double_t packetFinishTime, packetStartTime;
 
-	uint16_t weightedQueue = Classify(p);
-
-	// Second Queue
-	if (weightedQueue == 1) {
-		if (m_mode == QUEUE_MODE_PACKETS
-				&& (m_secondWeightedQueue.size() >= m_secondMaxPackets)) {
-			NS_LOG_LOGIC("Queue full (at max packets) -- dropping pkt");
-			Drop(p);
-			return false;
-		}
-
-		if (m_mode == QUEUE_MODE_BYTES
-				&& (m_bytesInSecondQueue + p->GetSize() >= m_secondMaxBytes)) {
-			NS_LOG_LOGIC(
-					"Queue full (packet would exceed max bytes) -- dropping pkt");
-			Drop(p);
-			return false;
-		}
-
-		// calculating the virtual finish time
-		if (m_secondWeightedQueue.empty())
-			currentStartTime = m_virtualTime;
-		else
-			currentStartTime = m_finishTimeCollection[m_secondWeightedQueue.back()->GetUid()];
-		currentFinishTime = CalculateFinishTime(currentStartTime, p->GetSize(), m_secondWeight);
-		m_finishTimeCollection[p->GetUid()] = currentFinishTime;
-
-		m_bytesInSecondQueue += p->GetSize();
-		m_secondWeightedQueue.push(p);
-
-		NS_LOG_LOGIC("Number packets " << m_secondWeightedQueue.size ());
-		NS_LOG_LOGIC("Number bytes " << m_bytesInSecondQueue);
-
-		//*****************************************
-		// temporary, should be removed later
-	    if (m_bytesInSecondQueue > max_secondQueue)
-	    	max_secondQueue = m_bytesInSecondQueue;
-		//*****************************************
-
-		return true;
+	if (m_isInitialized == false)
+	{
+		InitializeClassMaps();
+		m_isInitialized = true;
 	}
 
-	// First Queue
-	else if (weightedQueue == 0) {
-		if (m_mode == QUEUE_MODE_PACKETS
-				&& (m_firstWeightedQueue.size() >= m_firstMaxPackets)) {
-			NS_LOG_LOGIC("Queue full (at max packets) -- dropping pkt");
-			Drop(p);
-			return false;
-		}
+	uint16_t classIndex = Classify(p);
 
-		if (m_mode == QUEUE_MODE_BYTES
-				&& (m_bytesInFirstQueue + p->GetSize() >= m_firstMaxBytes)) {
-			NS_LOG_LOGIC(
-					"Queue full (packet would exceed max bytes) -- dropping pkt");
-			Drop(p);
-			return false;
-		}
-
-		// calculating the virtual finish time
-		if (m_firstWeightedQueue.empty())
-			currentStartTime = m_virtualTime;
-		else
-			currentStartTime = m_finishTimeCollection[m_firstWeightedQueue.back()->GetUid()];
-		currentFinishTime = CalculateFinishTime(currentStartTime, p->GetSize(), m_firstWeight);
-		m_finishTimeCollection[p->GetUid()] = currentFinishTime;
-
-		m_bytesInFirstQueue += p->GetSize();
-		m_firstWeightedQueue.push(p);
-
-		NS_LOG_LOGIC("Number packets " << m_firstWeightedQueue.size ());
-		NS_LOG_LOGIC("Number bytes " << m_bytesInFirstQueue);
-
-
-
-		//*****************************************
-		// temporary, should be removed later
-		if (m_bytesInFirstQueue > max_firstQueue)
-			max_firstQueue = m_bytesInFirstQueue;
-		//*****************************************
-
-		return true;
-	}
-
-	// This normally never happens unless Classify() has been changed
-	else {
+	if (m_mode == QUEUE_MODE_PACKETS
+			&& (m_classList[classIndex].m_packetsInWFQQueue >= m_classList[classIndex].m_maxPackets)) {
+		NS_LOG_LOGIC("Queue full (at max packets) -- dropping pkt");
+		Drop(p);
 		return false;
 	}
+
+	if (m_mode == QUEUE_MODE_BYTES
+			&& (m_classList[classIndex].m_bytesInWFQQueue + p->GetSize() >= m_classList[classIndex].m_maxBytes)) {
+		NS_LOG_LOGIC("Queue full (packet would exceed max bytes) -- dropping pkt");
+		Drop(p);
+		return false;
+	}
+
+
+	// updating virtual time based on iterated deletion
+	bool fin = false;
+	int16_t minActiveClassIndex;
+	double_t minActiveLastFinishTime;
+	double_t delta;
+	//double_t t_chk = m_lastVirtualTimeUpdate;
+	double_t t_now = Simulator::Now().GetSeconds();
+	//double_t v_chk = m_virtualTime;
+	while (!fin)
+	{
+		delta = t_now - t_chk;
+		minActiveClassIndex = GetMinActiveClass();
+		if (minActiveClassIndex == -1)
+			fin = true;
+		else
+		{
+			minActiveLastFinishTime = m_classList[minActiveClassIndex].m_lastFinishTime;
+			if (!(minActiveLastFinishTime <= (v_chk + delta / CalculateActiveSum())))
+				fin = true;
+		}
+
+		if (fin == false)
+		{
+			t_chk = t_chk + (minActiveLastFinishTime - v_chk) * CalculateActiveSum();
+			v_chk = minActiveLastFinishTime;
+			m_classList[minActiveClassIndex].m_active = false;
+		}
+
+		else
+		{
+			if (minActiveClassIndex == -1)
+			{
+				m_virtualTime = v_chk;// = 0;
+				//ClearLastFinishTimes();
+			}
+			else
+				m_virtualTime = v_chk + delta / CalculateActiveSum();
+			v_chk = m_virtualTime;
+			t_chk = t_now;
+			//break;
+		}
+	}
+
+	m_classList[classIndex].m_active = true;
+
+
+	//packetStartTime = std::max(m_virtualTime , m_classList[classIndex].m_lastFinishTime);
+	packetStartTime = m_classList[classIndex].m_lastFinishTime > m_virtualTime ? m_classList[classIndex].m_lastFinishTime : m_virtualTime;
+	packetFinishTime = CalculateFinishTime(packetStartTime, p->GetSize(), m_classList[classIndex].m_weight);
+
+	m_classList[classIndex].m_lastFinishTime = packetFinishTime;
+
+	QueueItem queueItem1 = QueueItem();
+	queueItem1.m_packet = p;
+	queueItem1.m_finishTime = packetFinishTime;
+	queueItem1.m_classIndex = classIndex;
+	m_wfqPQ.push(queueItem1);
+
+	m_classList[classIndex].m_bytesInWFQQueue += p->GetSize();
+	m_classList[classIndex].m_packetsInWFQQueue++;
+	NS_LOG_LOGIC("Number packets " << m_classList[classIndex].m_packetsInWFQQueue);
+	NS_LOG_LOGIC("Number bytes " << m_classList[classIndex].m_bytesInWFQQueue);
+
+
+	return true;
 }
 
 Ptr<Packet> WeightedFairQueue::DoDequeue(void) {
-	double_t firstFinishTime, secondFinishTime, minFinishTime = (1.7e+308);
-	int16_t minQueue = -1;
-	Ptr<Packet> p1, p2;
 	NS_LOG_FUNCTION(this);
+	uint16_t minClassIndex;
+	Ptr<Packet> p;
 
-    if (!m_firstWeightedQueue.empty()) {
-    	p1 = m_firstWeightedQueue.front();
-    	firstFinishTime = m_finishTimeCollection[p1->GetUid()];
-    	if (firstFinishTime <= minFinishTime) {
-    		minFinishTime = firstFinishTime;
-    		minQueue = 0;
-    	}
-    }
+	if (!m_wfqPQ.empty())
+	{
+		QueueItem queueItem = m_wfqPQ.top();
+		minClassIndex = queueItem.m_classIndex;
+		p = queueItem.m_packet;
+		m_wfqPQ.pop();
+		m_classList[minClassIndex].m_bytesInWFQQueue -= p->GetSize();
+		m_classList[minClassIndex].m_packetsInWFQQueue--;
 
-	if (!m_secondWeightedQueue.empty()) {
-		p2 = m_secondWeightedQueue.front();
-		secondFinishTime = m_finishTimeCollection[p2->GetUid()];
-		if (secondFinishTime <= minFinishTime) {
-			minFinishTime = secondFinishTime;
-			minQueue = 1;
-		}
+		NS_LOG_LOGIC("Popped " << p);
+		NS_LOG_LOGIC("Number packets " << m_classList[minClassIndex].m_packetsInWFQQueue);
+		NS_LOG_LOGIC("Number bytes " << m_classList[minClassIndex].m_bytesInWFQQueue);
+
+		return p;
 	}
 
-	if (minQueue == 0) {
-
-		m_virtualTime += 8*p1->GetSize() / CalculateWeightSum();
-
-		m_firstWeightedQueue.pop();
-		m_bytesInFirstQueue -= p1->GetSize();
-		m_finishTimeCollection.erase(p1->GetUid());
-
-		NS_LOG_LOGIC("Popped " << p1);
-
-		NS_LOG_LOGIC("Number packets " << m_firstWeightedQueue.size ());
-		NS_LOG_LOGIC("Number bytes " << m_bytesInFirstQueue);
-
-		return p1;
-	}
-
-	else if (minQueue == 1) {
-
-		m_virtualTime += 8*p2->GetSize() / CalculateWeightSum();
-
-		m_secondWeightedQueue.pop();
-		m_bytesInSecondQueue -= p2->GetSize();
-		m_finishTimeCollection.erase(p2->GetUid());
-
-		NS_LOG_LOGIC("Popped " << p2);
-
-		NS_LOG_LOGIC("Number packets " << m_secondWeightedQueue.size ());
-		NS_LOG_LOGIC("Number bytes " << m_bytesInSecondQueue);
-
-		return p2;
-	}
-
-	else {
+	else
+	{
 		NS_LOG_LOGIC("all queues empty");
 		return 0;
 	}
 }
 
 Ptr<const Packet> WeightedFairQueue::DoPeek(void) const {
-	double_t firstFinishTime, secondFinishTime, minFinishTime = (1.7e+308);
-	int16_t minQueue = -1;
-	Ptr<Packet> p1, p2;
 	NS_LOG_FUNCTION(this);
+	/*uint16_t minClassIndex;
+	Ptr<Packet> p;
 
-    if (!m_firstWeightedQueue.empty()) {
-    	p1 = m_firstWeightedQueue.front();
-    	firstFinishTime =  getFinishTimeCollection()[p1->GetUid()];
-    	if (firstFinishTime <= minFinishTime) {
-    		minFinishTime = firstFinishTime;
-    		minQueue = 0;
-    	}
-    }
+	if (!m_wfqPQ.empty())
+	{
+		QueueItem queueItem = m_wfqPQ.top();
+		minClassIndex = queueItem.m_classIndex;
+		p = queueItem.m_packet;
+		//m_wfqPQ.pop();
+		//m_classList[minClassIndex].m_bytesInWFQQueue -= p->GetSize();
+		//m_classList[minClassIndex].m_packetsInWFQQueue--;
 
-	if (!m_secondWeightedQueue.empty()) {
-		p2 = m_secondWeightedQueue.front();
-		secondFinishTime = getFinishTimeCollection()[p2->GetUid()];
-		if (secondFinishTime <= minFinishTime) {
-			minFinishTime = secondFinishTime;
-			minQueue = 1;
-		}
+		//NS_LOG_LOGIC("Popped " << p);
+		NS_LOG_LOGIC("Number packets " << m_classList[minClassIndex].m_packetsInWFQQueue);
+		NS_LOG_LOGIC("Number bytes " << m_classList[minClassIndex].m_bytesInWFQQueue);
+
+		//std::cout << "dequeue at: " << Simulator::Now().GetSeconds() << std::endl;
+
+		return p;
 	}
 
-	if (minQueue == 0) {
-		NS_LOG_LOGIC("Number packets " << m_firstWeightedQueue.size ());
-		NS_LOG_LOGIC("Number bytes " << m_bytesInFirstQueue);
-
-		return p1;
-	}
-
-	else if (minQueue == 1) {
-		NS_LOG_LOGIC("Number packets " << m_secondWeightedQueue.size ());
-		NS_LOG_LOGIC("Number bytes " << m_bytesInSecondQueue);
-
-		return p2;
-	}
-
-	else {
+	else
+	{
 		NS_LOG_LOGIC("all queues empty");
 		return 0;
-	}
+	}*/
+
+	return 0;
 }
-
-
-std::map<uint64_t, double_t> WeightedFairQueue::getFinishTimeCollection() const {
-	return m_finishTimeCollection;
-}
-
 
 double_t WeightedFairQueue::CalculateFinishTime (double_t startTime, uint32_t packetSize, double_t weight) {
 
-	return startTime + (8 * packetSize / weight);
+	return startTime + (8 * packetSize / (weight * m_linkCapacity));
 }
 
 
-double_t WeightedFairQueue::CalculateWeightSum(void) {
+double_t WeightedFairQueue::CalculateActiveSum(void) {
 	double_t weightSum = 0;
 
-	if (!m_firstWeightedQueue.empty())
-		weightSum += m_firstWeight;
+	for (unsigned int i=0; i<m_classList.size(); i++) {
 
-	if (!m_secondWeightedQueue.empty())
-		weightSum += m_secondWeight;
+		if (m_classList[i].m_active == true)
+			weightSum += m_classList[i].m_weight;
+	}
 
 	return weightSum;
 }
 
-} // namespace ns3
+void WeightedFairQueue::InitializeClassMaps(void) {
 
+	ClassMap classMap1 = ClassMap();
+	classMap1.m_maxPackets = m_inputFirstMaxPackets;
+	classMap1.m_maxBytes = m_inputFirstMaxBytes;
+	classMap1.m_weight = m_inputFirstWeight;
+
+	ClassMap classMap2 = ClassMap();
+	classMap2.m_maxPackets = m_inputSecondMaxPackets;
+	classMap2.m_maxBytes = m_inputSecondMaxBytes;
+	classMap2.m_weight = m_inputSecondWeight;
+
+	m_classList.push_back(classMap1);
+	m_classList.push_back(classMap2);
+
+	//ClearLastFinishTimes();
+}
+
+/*void WeightedFairQueue::ClearLastFinishTimes(void) {
+	for (unsigned int i=0; i<m_classList.size(); i++)
+		m_classList[i].m_lastFinishTime = 0;
+}*/
+
+int16_t WeightedFairQueue::GetMinActiveClass(void) {
+
+	double_t minLastFinishTime = DBL_MAX;
+	int16_t minActiveClassIndex = -1;
+
+	for (unsigned int i=0; i<m_classList.size(); i++) {
+
+		if (m_classList[i].m_active == true)
+			if (m_classList[i].m_lastFinishTime < minLastFinishTime)
+			{
+				minLastFinishTime = m_classList[i].m_lastFinishTime;
+				minActiveClassIndex = i;
+			}
+	}
+
+	return minActiveClassIndex;
+}
+
+ClassMap::ClassMap() {
+
+	m_bytesInWFQQueue = 0;
+	m_packetsInWFQQueue = 0;
+	m_lastFinishTime = 0;
+	m_active = false;
+}
+
+} // namespace ns3

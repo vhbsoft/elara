@@ -63,7 +63,7 @@ main (int argc, char *argv[])
   uint16_t R2port = 3001;
   uint32_t tcp_adu_size = 946;
 
-  uint32_t DEFAULT_DATA_BYTES = 1073741824; //1000000000;
+  uint32_t DEFAULT_DATA_BYTES = 1073741824;
   uint32_t ftp1_data_bytes = DEFAULT_DATA_BYTES;
   uint32_t ftp2_data_bytes = DEFAULT_DATA_BYTES;
 
@@ -89,12 +89,14 @@ main (int argc, char *argv[])
   std::string N2R1Delay = DEFAULT_DELAY;
   std::string N2R2Delay = DEFAULT_DELAY;
 
-  std::string DEFAULT_DATARATE = "0.5Mbps";
+  std::string DEFAULT_DATARATE = "1Mbps";
   std::string S1N1DataRate = DEFAULT_DATARATE;
   std::string S2N1DataRate = DEFAULT_DATARATE;
-  std::string N1N2DataRate = "0.25Mbps";
+  std::string N1N2DataRate = "0.5Mbps";
   std::string N2R1DataRate = DEFAULT_DATARATE;
   std::string N2R2DataRate = DEFAULT_DATARATE;
+
+  double_t linkCapacity = 0.5 * 1000000;
 
   uint16_t DEFAULT_MTU = 2064;
   uint16_t S1N1Mtu = DEFAULT_MTU;
@@ -178,6 +180,8 @@ main (int argc, char *argv[])
 
   cmd.AddValue ("totalExpectedBytes", "Total expected bytes passed before end of simulation - used for showing progression percentage", totalExpectedBytes);
 
+  cmd.AddValue ("linkCapacity", "Link capacity of the bottleneck in bit/sec", linkCapacity);
+
   cmd.Parse (argc, argv);
 
 
@@ -232,6 +236,7 @@ main (int argc, char *argv[])
   m_queueFactory.Set ("FirstWeight", DoubleValue (firstWeight));
   m_queueFactory.Set ("SecondWeight", DoubleValue (secondWeight));
   m_queueFactory.Set ("TotalExpectedBytes", UintegerValue (totalExpectedBytes));
+  m_queueFactory.Set ("LinkCapacity", DoubleValue (linkCapacity));
 
   Ptr<Queue> queueN1 = m_queueFactory.Create<Queue> ();
   Ptr<PointToPointNetDevice>  devN1 = NetDeviceDynamicCast(N1N2_d.Get(0));
