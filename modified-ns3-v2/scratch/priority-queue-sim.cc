@@ -3,7 +3,7 @@
  * Robert Chang 2012
  *
  * Usage:
-./waf --run "4-node-priority-queue --procDelay=0.000001 --ReceiveQueueSizeR2=10000 --TXQueueSizeS=400000000 --TXQueueSizeR1=6000000 --TXQueueSizeR2=15000000 --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=10Mbps --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --packetSize=10 --outputFile=./output_files/temp.dat --interPacketTime=0.00000001 --separationPacketTrainLength=1000 --initialPacketTrainLength=150 --numAptPriorityProbes=500 --aptPriority='H'"
+./waf --run "priority-queue-sim --ReceiveQueueSizeR2=10000 --TXQueueSizeS=400000000 --TXQueueSizeR1=6000000 --TXQueueSizeR2=15000000 --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=10Mbps --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --packetSize=10 --outputFile=./output_files/temp.dat --interPacketTime=0.00000001 --separationPacketTrainLength=1000 --initialPacketTrainLength=150 --numAptPriorityProbes=500 --aptPriority='H'"
  */
 
 #include <string>
@@ -41,7 +41,6 @@ main (int argc, char *argv[])
   uint32_t ReceiveQueueSizeR2 = 655350000;
   uint32_t highPriorityQueueSize = 655350000;
   uint32_t lowPriorityQueueSize = 655350000;
-  double procDelay = 1;
 
 
   uint32_t TXQueueSizeS = 655350000;
@@ -83,7 +82,6 @@ main (int argc, char *argv[])
   cmd.AddValue ("ReceiveQueueSizeR2", "The size of the incoming queue on R2", ReceiveQueueSizeR2);
   cmd.AddValue ("highPriorityQueueSize", "", highPriorityQueueSize);
   cmd.AddValue ("lowPriorityQueueSize", "", lowPriorityQueueSize);
-  cmd.AddValue ("procDelay", "processing delay on R1", procDelay);
 
   cmd.AddValue ("TXQueueSizeS", "The size of the outgoing queue on S", TXQueueSizeS);
   cmd.AddValue ("TXQueueSizeR1", "The size of the outgoing queue on R1", TXQueueSizeR1);
@@ -213,7 +211,7 @@ main (int argc, char *argv[])
   // Logging stuff
   LogComponentEnable("PriorityQueueSender", LOG_LEVEL_ERROR);
   LogComponentEnable("PriorityQueueReceiver", LOG_LEVEL_ERROR);
-  LogComponentEnable("PriorityQueueModel", LOG_LEVEL_ERROR);
+  LogComponentEnable("PriorityQueue", LOG_LEVEL_ERROR);
 
   if (log=='1' || log=='3')
     {
