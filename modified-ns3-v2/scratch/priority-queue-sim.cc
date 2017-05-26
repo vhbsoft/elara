@@ -3,7 +3,7 @@
  * Robert Chang 2012
  *
  * Usage:
-./waf --run "priority-queue-sim --ReceiveQueueSizeR2=10000 --TXQueueSizeS=400000000 --TXQueueSizeR1=6000000 --TXQueueSizeR2=15000000 --SR1DataRate=10Mbps --R1R2DataRate=10Mbps --R2RDataRate=10Mbps --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --packetSize=10 --outputFile=./output_files/temp.dat --interPacketTime=0.00000001 --separationPacketTrainLength=1000 --initialPacketTrainLength=150 --numAptPriorityProbes=500 --aptPriority='H'"
+./waf --run "priority-queue-sim --TXQueueSizeR2=100 --TXQueueSizeS=4000000 --highPriorityQueueSize=5 --lowPriorityQueueSize=5 --SR1Delay=5ms --R1R2Delay=5ms --R2RDelay=5ms --SR1DataRate=25Mbps --R1R2DataRate=10Mbps --R2RDataRate=100Mbps --outputFile=./OUTPUT_FILES/P_L_L_10.dat --packetSize=1024 --interPacketTime=0.00000001 --initialPacketTrainLength=1000 --separationPacketTrainLength=10 --numAptPriorityProbes=1000 --aptPriority='L'"
  */
 
 #include <string>
@@ -38,14 +38,13 @@ main (int argc, char *argv[])
   uint32_t priorityPort = 3000;
 
   // Network Settings
-  uint32_t ReceiveQueueSizeR2 = 655350000;
   uint32_t highPriorityQueueSize = 655350000;
   uint32_t lowPriorityQueueSize = 655350000;
 
 
   uint32_t TXQueueSizeS = 655350000;
-  uint32_t TXQueueSizeR1 = 655350000;
   uint32_t TXQueueSizeR2 = 655350000;
+
   std::string SR1DataRate = "4Mbps";
   std::string R1R2DataRate = "4Mbps";
   std::string R2RDataRate = "4Mbps";
@@ -79,20 +78,20 @@ main (int argc, char *argv[])
 
   cmd.AddValue ("priorityPort", "Destination port for high priority traffic", priorityPort);  
 
-  cmd.AddValue ("ReceiveQueueSizeR2", "The size of the incoming queue on R2", ReceiveQueueSizeR2);
   cmd.AddValue ("highPriorityQueueSize", "", highPriorityQueueSize);
   cmd.AddValue ("lowPriorityQueueSize", "", lowPriorityQueueSize);
 
   cmd.AddValue ("TXQueueSizeS", "The size of the outgoing queue on S", TXQueueSizeS);
-  cmd.AddValue ("TXQueueSizeR1", "The size of the outgoing queue on R1", TXQueueSizeR1);
   cmd.AddValue ("TXQueueSizeR2", "The size of the outgoing queue on R2", TXQueueSizeR2);
 
   cmd.AddValue ("SR1DataRate", "The transmission rate on p2pchannel SR1", SR1DataRate);
   cmd.AddValue ("R1R2DataRate", "The transmission rate on p2pchannel R1R2", R1R2DataRate);
   cmd.AddValue ("R2RDataRate", "The transmission rate on p2pchannel R2R", R2RDataRate);
+
   cmd.AddValue ("SR1Delay", "The transmission delay of the p2pchannel s0p0", SR1Delay);
   cmd.AddValue ("R1R2Delay", "The transmission delay of the p2pchannel p0p1", R1R2Delay);
   cmd.AddValue ("R2RDelay", "The transmission delay of the p2pchannel p1r0", R2RDelay);
+
   cmd.AddValue ("SMtu","", SMtu);
   cmd.AddValue ("R1Mtu","", R1Mtu);
   cmd.AddValue ("R2Mtu","", R2Mtu);
