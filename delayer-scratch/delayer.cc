@@ -10,6 +10,8 @@
  */
 
 #include <string>
+#include <iostream>
+#include <sstream>
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -22,6 +24,7 @@
 #include "ns3/nstime.h"
 
 using namespace ns3;
+using namespace std;
 
 NS_LOG_COMPONENT_DEFINE ("Compression-Test");
 
@@ -35,13 +38,14 @@ main (int argc, char *argv[])
   double endTime = 60000.0;
   uint8_t log = 0;
   bool isShaper = false;
+  int delayer = 100000000;
 
   // Application Settings  
   uint32_t numPackets = 1000;
   double interPacketTime = 0.001;
   uint32_t packetSize = 1072;
-  char entropy = 'h';
-  std::string outputFile = "ns_output_file2";
+  char entropy = 'l';
+  std::string outputFile = "ns_output_file";
 
   // Network Settings
   std::string s0p0Delay = "30ms";
@@ -70,6 +74,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("log", "1 to enable logging messages, 0 to disable. Disabled by default", log);
 
   cmd.AddValue ("isShaper", "Wether it is a shaper or delayer", isShaper);
+  cmd.AddValue ("delayer", "an integer number representing delay", delayer);
   cmd.AddValue ("entropy", "The entropy of the packets sent", entropy);
   cmd.AddValue ("numPackets", "Number of packets to Send", numPackets);
   cmd.AddValue ("packetSize", "Size of the packets, bounds are 12 and 1500", packetSize);
@@ -101,10 +106,20 @@ main (int argc, char *argv[])
 
   // Create the nodes
 
-  if(isShaper)
-  	s0p0DataRate = "100Gbps";
-  else
-  	s0p0DataRate = "1Mbps";
+  if(isShaper){
+  	int time = packetSize / delayer;
+  	std::stringstream stream;
+  	stream << time;
+  	s0p0DataRate = stream.str()+"Gbps";
+
+  }
+  else{
+  	int time = packetSize / delayer;
+  	std::stringstream stream;
+  	stream << time;  	
+  	s0p0DataRate = stream.str()+"Mbps";
+  }
+
 
 
   NodeContainer allNodes;
