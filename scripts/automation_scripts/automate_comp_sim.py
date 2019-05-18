@@ -1,8 +1,8 @@
-#Script by Mario A Garcia 
-#Github: https://github.com/mg424
-#Created @CSUN in Summer 2018
+import os
 
 #This script is used to automate the waf commands that run compression simulation in NS-3.
+
+#OUTPUT
 #This will generate a .csv file with the following format
 #
 #	 _______________________________________________	
@@ -12,7 +12,6 @@
 #	|_______________________|_______________________|	
 #
 
-import os
 
 #Example run of compression sim using waf commands for reference
 #This example has every parameter that is possible present.

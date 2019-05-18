@@ -4,15 +4,20 @@ import os
 #.csv filename format example: "test_1Mbps__num_of_packets_500_H_"
 #the above filname was produced using "automate_comp_sim.py"
 
+#INPUT
 #Reads a .csv file with format below
-#Packet id 				Timestamp or -1(if packet was lost)
+#	 _______________________________________________	
+#	|		Packet id 		|		Timestamp 		|
+#	|_______________________|_______________________|
+#	|		  XXXX			|			-1			|
+#	|_______________________|_______________________|
 
+#OUTPUT
 #Writes out the following to a csv file
-#Number of Packets			ID of Last Packet Received 			Bandwitdh 				Entropy 			
-#500 							499						   		  1Mbps				  	   H
+#Number of Packets			ID of Last Packet Received 		Bandwitdh 		Entropy 			
+#500 							499						   	 1Mbps			  H	
 
-
-#Directory where .csv files are located
+#Directory where my .csv files are located
 pathTo = "/home/mario/Documents/research/CompressionDataRun/all/"
 #This command changes the directory to where the waf commands are enabled
 os.chdir(pathTo)
@@ -20,9 +25,11 @@ os.chdir(pathTo)
 
 #Experiment details broken down 
 test_args = {}
-test_args['bandwidth'] = 'Mbps'
+#I left this as just Mbps because the actual value changes inside the main for loop.
+test_args['bandwidth'] = 'Mbps'			
 test_args['number_of_packets'] = '500'
-test_args['entropy'] = 'H'
+#The only possible values for entropy are H for high and L for low.
+test_args['entropy'] = 'H'				
 test_args['last_packet'] = '500'
 
 #helper array to loop through bandwidths
@@ -42,7 +49,7 @@ while True:
 		test_args['number_of_packets'] = str(numPackets)
 		#high entropy
 		test_args['entropy'] = 'H'
-		#filename manip
+		#filename manipulation
 		fpath = "test_"
 		fpath += str(bands[counter])
 		fpath += test_args['bandwidth'] 
