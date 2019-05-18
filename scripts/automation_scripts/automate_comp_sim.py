@@ -5,11 +5,11 @@
 #This script is used to automate the waf commands that run compression simulation in NS-3.
 #This will generate a .csv file with the following format
 #
-#	 _______________________________________________________________________	
-#	|		Packet id 		|		Timestamp or -1(if packet was lost)		|
-#	|_______________________|_______________________________________________|
-#	|		  XXXX			|					-1							|
-#	|_______________________|_______________________________________________|	
+#	 _______________________________________________	
+#	|		Packet id 		|		Timestamp 		|
+#	|_______________________|_______________________|
+#	|		  XXXX			|			-1			|
+#	|_______________________|_______________________|	
 #
 
 import os
